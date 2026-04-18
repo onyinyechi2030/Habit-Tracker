@@ -1,152 +1,1486 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Habit Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habit Performance Tracker</title>
+  <meta name="theme-color" content="#111827" />
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-soft: #111827;
+      --card: #172033;
+      --card-2: #1f2a44;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #2c3958;
+      --accent: #7dd3fc;
+      --accent-2: #86efac;
+      --warn: #fbbf24;
+      --danger: #fb7185;
+      --shadow: 0 10px 25px rgba(0,0,0,.22);
+      --radius: 18px;
+    }
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: #fff;
-  padding: 16px;
-}
-.card {
-  background: #1c1c1c;
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
-input, button {
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px;
-  border-radius: 8px;
-  border: none;
-}
-button {
-  background: #4caf50;
-  color: white;
-}
-h2 { margin-top: 0; }
-.small { font-size: 12px; color: #aaa; }
-</style>
+    body.light {
+      --bg: #f4f7fb;
+      --bg-soft: #ffffff;
+      --card: #ffffff;
+      --card-2: #f8fafc;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #dde5f0;
+      --accent: #0284c7;
+      --accent-2: #16a34a;
+      --warn: #d97706;
+      --danger: #e11d48;
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { min-height: 100vh; }
+
+    .app {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 16px 16px 110px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      line-height: 1.15;
+    }
+
+    .title-wrap p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    .pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    .pill, .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: .92rem;
+      box-shadow: var(--shadow);
+    }
+
+    .badge { padding: 6px 10px; box-shadow: none; }
+    .badge.good { color: var(--accent-2); }
+    .badge.warn { color: var(--warn); }
+    .badge.bad { color: var(--danger); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      grid-column: span 12;
+      background: linear-gradient(180deg, var(--card), var(--card-2));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .card h2, .card h3 {
+      margin: 0 0 10px;
+      line-height: 1.15;
+    }
+
+    .card h2 { font-size: 1.1rem; }
+    .card h3 { font-size: 1rem; }
+
+    .subtle { color: var(--muted); font-size: .92rem; }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .two, .three, .four {
+      display: grid;
+      gap: 12px;
+    }
+
+    .two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .four { grid-template-columns: repeat(4, minmax(0,1fr)); }
+
+    label {
+      display: block;
+      font-size: .9rem;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+
+    input, select, textarea, button {
+      font: inherit;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    input[type="time"],
+    input[type="date"],
+    input[type="email"],
+    input[type="password"],
+    textarea, select {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text);
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    textarea { min-height: 90px; resize: vertical; }
+
+    .stack > div + div { margin-top: 10px; }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+
+    .check-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      padding: 11px 12px;
+      border-radius: 14px;
+    }
+
+    .check-pill input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #062033;
+      font-weight: 700;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button.good { background: var(--accent-2); color: #062a15; }
+    button.warn { background: var(--warn); color: #2c1700; }
+    button.danger { background: var(--danger); color: white; }
+
+    .progress-wrap { margin-top: 8px; }
+    .progress {
+      width: 100%;
+      height: 12px;
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .kpi {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px,1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .kpi .box {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .kpi .value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: .95rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th { color: var(--muted); font-weight: 600; }
+
+    .nav {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(100%, 880px);
+      padding: 0 12px;
+      z-index: 50;
+    }
+
+    .nav-inner {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: rgba(17,24,39,.92);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    body.light .nav-inner { background: rgba(255,255,255,.95); }
+
+    .tab-btn {
+      border-radius: 0;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 14px 8px;
+      font-weight: 600;
+    }
+    .tab-btn.active {
+      background: rgba(125,211,252,.12);
+      color: var(--text);
+    }
+
+    .hidden { display: none !important; }
+    .right { text-align: right; }
+    .center { text-align: center; }
+    .mb8 { margin-bottom: 8px; }
+
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    .toast.show { opacity: 1; }
+
+    @media (min-width: 760px) {
+      .span-6 { grid-column: span 6; }
+      .span-4 { grid-column: span 4; }
+      .span-8 { grid-column: span 8; }
+    }
+
+    @media (max-width: 720px) {
+      .two, .three, .four { grid-template-columns: 1fr; }
+      .topbar { grid-template-columns: 1fr; }
+      .title-wrap h1 { font-size: 1.3rem; }
+    }
+  </style>
 </head>
-
 <body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title-wrap">
+        <h1>Habit Performance Tracker</h1>
+        <p id="todaySubtitle">Track the day. Review the week. Adjust the targets.</p>
+      </div>
+      <div class="pill-row">
+        <div class="pill"><span id="todayLabel"></span></div>
+        <div class="pill"><span id="syncStatusLabel">Local only</span></div>
+      </div>
+    </div>
 
-<h1>Daily Tracker</h1>
+    <section id="tab-today">
+      <div class="grid">
+        <div class="card span-8">
+          <div class="section-head">
+            <div>
+              <h2>Daily entry</h2>
+              <div class="subtle">Use any date, but this is optimized for daily logging.</div>
+            </div>
+            <div class="badge" id="dayScoreBadge">Overall pending</div>
+          </div>
+          <div class="two">
+            <div>
+              <label for="entryDate">Date</label>
+              <input type="date" id="entryDate" />
+            </div>
+            <div>
+              <label for="overallNotes">Daily notes</label>
+              <input type="text" id="overallNotes" placeholder="Optional note" />
+            </div>
+          </div>
+        </div>
 
-<div class="card">
-<h2>Exercise</h2>
-<label>Cardio (min)</label>
-<input id="cardio" type="number">
-<label>Walking (min)</label>
-<input id="walking" type="number">
-<label>Strength (min)</label>
-<input id="strength" type="number">
-<label>Yoga (min)</label>
-<input id="yoga" type="number">
-<p id="exerciseTotal"></p>
-</div>
+        <div class="card span-4">
+          <h2>Today at a glance</h2>
+          <div class="kpi">
+            <div class="box"><div class="subtle">Exercise today</div><div class="value" id="todayExerciseTotal">0 min</div></div>
+            <div class="box"><div class="subtle">Prayer today</div><div class="value" id="todayPrayerTotal">0 min</div></div>
+            <div class="box"><div class="subtle">Study today</div><div class="value" id="todayStudyTotal">0 min</div></div>
+            <div class="box"><div class="subtle">Sleep</div><div class="value" id="todaySleepTotal">0 h</div></div>
+          </div>
+        </div>
 
-<div class="card">
-<h2>Prayer</h2>
-<label>Minutes</label>
-<input id="prayerMin" type="number">
-<label><input type="checkbox" id="rosary"> Rosary</label>
-<label><input type="checkbox" id="morning"> Morning Prayer</label>
-<label><input type="checkbox" id="examen"> Examen</label>
-</div>
+        <div class="card span-6">
+          <div class="section-head"><div><h3>Exercise</h3><div class="subtle">Daily minutes by category</div></div><div class="badge" id="exerciseBadge">0%</div></div>
+          <div class="four">
+            <div><label for="exCardio">Cardio</label><input type="number" min="0" id="exCardio" placeholder="0" /></div>
+            <div><label for="exWalking">Walking</label><input type="number" min="0" id="exWalking" placeholder="0" /></div>
+            <div><label for="exStrength">Strength</label><input type="number" min="0" id="exStrength" placeholder="0" /></div>
+            <div><label for="exYoga">Yoga</label><input type="number" min="0" id="exYoga" placeholder="0" /></div>
+          </div>
+          <div class="kpi">
+            <div class="box"><div class="subtle">Total</div><div class="value" id="exerciseMinutesValue">0 min</div></div>
+            <div class="box"><div class="subtle">Threshold</div><div class="value" id="exerciseThresholdValue">—</div></div>
+          </div>
+          <div class="progress-wrap"><div class="progress"><span id="exerciseProgress"></span></div></div>
+        </div>
 
-<div class="card">
-<h2>Study</h2>
-<label>Minutes</label>
-<input id="studyMin" type="number">
-</div>
+        <div class="card span-6">
+          <div class="section-head"><div><h3>Prayer</h3><div class="subtle">Minutes plus selected practices</div></div><div class="badge" id="prayerBadge">0%</div></div>
+          <div class="two">
+            <div><label for="prayerMinutes">Prayer minutes</label><input type="number" min="0" id="prayerMinutes" placeholder="0" /></div>
+            <div><label for="prayerOther">Other prayer notes</label><input type="text" id="prayerOther" placeholder="Optional" /></div>
+          </div>
+          <div class="check-grid">
+            <label class="check-pill"><input type="checkbox" id="prMorning"> Morning prayer</label>
+            <label class="check-pill"><input type="checkbox" id="prExamen"> Examen</label>
+            <label class="check-pill"><input type="checkbox" id="prScripture"> Scripture</label>
+            <label class="check-pill"><input type="checkbox" id="prRosary"> Rosary</label>
+          </div>
+          <div class="progress-wrap"><div class="progress"><span id="prayerProgress"></span></div></div>
+        </div>
 
-<div class="card">
-<h2>Sleep</h2>
-<label>Hours</label>
-<input id="sleepHours" type="number" step="0.1">
-</div>
+        <div class="card span-6">
+          <div class="section-head"><div><h3>Diet</h3><div class="subtle">Simple performance-based adherence</div></div><div class="badge" id="dietBadge">0%</div></div>
+          <div class="check-grid">
+            <label class="check-pill"><input type="checkbox" id="dietPlan"> Followed plan</label>
+            <label class="check-pill"><input type="checkbox" id="dietSugar"> No added sugar</label>
+            <label class="check-pill"><input type="checkbox" id="dietLate"> No late eating</label>
+          </div>
+          <div class="progress-wrap"><div class="progress"><span id="dietProgress"></span></div></div>
+        </div>
 
-<div class="card">
-<h2>Diet</h2>
-<label><input type="checkbox" id="dietPlan"> Followed Plan</label>
-<label><input type="checkbox" id="noSugar"> No Sugar</label>
-<label><input type="checkbox" id="noLate"> No Late Eating</label>
-</div>
+        <div class="card span-6">
+          <div class="section-head"><div><h3>Study</h3><div class="subtle">Time plus focus quality</div></div><div class="badge" id="studyBadge">0%</div></div>
+          <div class="two">
+            <div><label for="studyMinutes">Study minutes</label><input type="number" min="0" id="studyMinutes" placeholder="0" /></div>
+            <div><label for="studyFocus">Focus</label>
+              <select id="studyFocus">
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+          <div><label for="studyTopic">Topic</label><input type="text" id="studyTopic" placeholder="Optional" /></div>
+          <div class="progress-wrap"><div class="progress"><span id="studyProgress"></span></div></div>
+        </div>
 
-<button onclick="saveDay()">Save Day</button>
+        <div class="card span-6">
+          <div class="section-head"><div><h3>Sleep</h3><div class="subtle">Hours, quality, and timing</div></div><div class="badge" id="sleepBadge">0%</div></div>
+          <div class="three">
+            <div><label for="sleepHours">Hours</label><input type="number" min="0" step="0.1" id="sleepHours" placeholder="0" /></div>
+            <div><label for="sleepQuality">Quality</label>
+              <select id="sleepQuality">
+                <option value="5">5</option>
+                <option value="4">4</option>
+                <option value="3" selected>3</option>
+                <option value="2">2</option>
+                <option value="1">1</option>
+              </select>
+            </div>
+            <div><label for="bedtime">Bedtime</label><input type="time" id="bedtime" /></div>
+          </div>
+          <div class="progress-wrap"><div class="progress"><span id="sleepProgress"></span></div></div>
+        </div>
 
-<div class="card">
-<h2>Weekly Progress</h2>
-<p id="weeklyStats"></p>
-</div>
+        <div class="card">
+          <div class="button-row">
+            <button id="saveDayBtn" class="good">Save day</button>
+            <button id="newDayBtn" class="secondary">Reset form</button>
+            <button id="deleteDayBtn" class="danger">Delete this date</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<script>
-const STORAGE_KEY = "habitData";
+    <section id="tab-review" class="hidden">
+      <div class="grid">
+        <div class="card span-8">
+          <div class="section-head"><div><h2>Weekly review</h2><div class="subtle">Current week based on the selected date.</div></div><div class="badge" id="weekRangeBadge"></div></div>
+          <div class="kpi" id="weeklyKpis"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Average</th>
+                  <th>Target / status</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="weeklyTable"></tbody>
+            </table>
+          </div>
+        </div>
 
-function getData() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-}
+        <div class="card span-4">
+          <h2>Exercise weekly targets</h2>
+          <div class="subtle">Tracks your 120-minute rule plus category totals.</div>
+          <div class="kpi" id="exerciseWeeklyKpis"></div>
+        </div>
 
-function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
+        <div class="card span-8">
+          <div class="section-head"><div><h2>Monthly review</h2><div class="subtle">Current month based on the selected date.</div></div><div class="badge" id="monthRangeBadge"></div></div>
+          <div class="kpi" id="monthlyKpis"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Average</th>
+                  <th>On-target days</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyTable"></tbody>
+            </table>
+          </div>
+        </div>
 
-function todayKey() {
-  return new Date().toISOString().split("T")[0];
-}
+        <div class="card span-4">
+          <h2>Recent entries</h2>
+          <div class="subtle mb8">Tap a date to load it into the daily form.</div>
+          <div id="recentEntriesList" class="stack"></div>
+        </div>
+      </div>
+    </section>
 
-function saveDay() {
-  let data = getData();
-  let today = todayKey();
+    <section id="tab-settings" class="hidden">
+      <div class="grid">
+        <div class="card span-6">
+          <h2>Exercise targets</h2>
+          <div class="three">
+            <div><label for="setExerciseDailyThreshold">Daily threshold (minutes)</label><input type="number" min="0" id="setExerciseDailyThreshold" /></div>
+            <div><label for="setExerciseQualifyingDays">Qualifying days per week</label><input type="number" min="0" max="7" id="setExerciseQualifyingDays" /></div>
+            <div><label for="setWalkingCounts">Walking counts toward daily threshold</label>
+              <select id="setWalkingCounts"><option value="true">Yes</option><option value="false">No</option></select>
+            </div>
+          </div>
+          <div class="four">
+            <div><label for="setWeeklyCardio">Cardio / week</label><input type="number" min="0" id="setWeeklyCardio" /></div>
+            <div><label for="setWeeklyWalking">Walking / week</label><input type="number" min="0" id="setWeeklyWalking" /></div>
+            <div><label for="setWeeklyStrength">Strength / week</label><input type="number" min="0" id="setWeeklyStrength" /></div>
+            <div><label for="setWeeklyYoga">Yoga / week</label><input type="number" min="0" id="setWeeklyYoga" /></div>
+          </div>
+        </div>
 
-  let entry = {
-    date: today,
-    cardio: +cardio.value || 0,
-    walking: +walking.value || 0,
-    strength: +strength.value || 0,
-    yoga: +yoga.value || 0,
-    prayerMin: +prayerMin.value || 0,
-    rosary: rosary.checked,
-    morning: morning.checked,
-    examen: examen.checked,
-    studyMin: +studyMin.value || 0,
-    sleepHours: +sleepHours.value || 0,
-    dietPlan: dietPlan.checked,
-    noSugar: noSugar.checked,
-    noLate: noLate.checked
-  };
+        <div class="card span-6">
+          <h2>Prayer targets</h2>
+          <div class="two">
+            <div><label for="setPrayerMin">Prayer minimum minutes</label><input type="number" min="0" id="setPrayerMin" /></div>
+            <div><label for="setPrayerWeightMinutes">Minutes weight (%)</label><input type="number" min="0" max="100" id="setPrayerWeightMinutes" /></div>
+          </div>
+          <div class="four">
+            <div><label for="setPrayerWeightMorning">Morning weight</label><input type="number" min="0" max="100" id="setPrayerWeightMorning" /></div>
+            <div><label for="setPrayerWeightExamen">Examen weight</label><input type="number" min="0" max="100" id="setPrayerWeightExamen" /></div>
+            <div><label for="setPrayerWeightScripture">Scripture weight</label><input type="number" min="0" max="100" id="setPrayerWeightScripture" /></div>
+            <div><label for="setPrayerWeightRosary">Rosary weight</label><input type="number" min="0" max="100" id="setPrayerWeightRosary" /></div>
+          </div>
+        </div>
 
-  data = data.filter(d => d.date !== today);
-  data.push(entry);
-  saveData(data);
+        <div class="card span-6">
+          <h2>Diet targets</h2>
+          <div class="three">
+            <div><label for="setDietWeightPlan">Followed plan weight</label><input type="number" min="0" max="100" id="setDietWeightPlan" /></div>
+            <div><label for="setDietWeightSugar">No sugar weight</label><input type="number" min="0" max="100" id="setDietWeightSugar" /></div>
+            <div><label for="setDietWeightLate">No late eating weight</label><input type="number" min="0" max="100" id="setDietWeightLate" /></div>
+          </div>
+        </div>
 
-  updateWeekly();
-  alert("Saved");
-}
+        <div class="card span-6">
+          <h2>Study targets</h2>
+          <div class="three">
+            <div><label for="setStudyMinutes">Study minutes target</label><input type="number" min="0" id="setStudyMinutes" /></div>
+            <div><label for="setStudyWeightTime">Time weight</label><input type="number" min="0" max="100" id="setStudyWeightTime" /></div>
+            <div><label for="setStudyWeightFocus">Focus weight</label><input type="number" min="0" max="100" id="setStudyWeightFocus" /></div>
+          </div>
+        </div>
 
-function updateWeekly() {
-  let data = getData();
-  let last7 = data.slice(-7);
+        <div class="card span-6">
+          <h2>Sleep targets</h2>
+          <div class="four">
+            <div><label for="setSleepMin">Minimum hours</label><input type="number" min="0" step="0.1" id="setSleepMin" /></div>
+            <div><label for="setSleepIdeal">Ideal hours</label><input type="number" min="0" step="0.1" id="setSleepIdeal" /></div>
+            <div><label for="setSleepBedtime">Target bedtime</label><input type="time" id="setSleepBedtime" /></div>
+            <div><label for="setSleepTolerance">Bedtime tolerance (minutes)</label><input type="number" min="0" id="setSleepTolerance" /></div>
+          </div>
+          <div class="three">
+            <div><label for="setSleepWeightHours">Hours weight</label><input type="number" min="0" max="100" id="setSleepWeightHours" /></div>
+            <div><label for="setSleepWeightBedtime">Bedtime weight</label><input type="number" min="0" max="100" id="setSleepWeightBedtime" /></div>
+            <div><label for="setSleepWeightQuality">Quality weight</label><input type="number" min="0" max="100" id="setSleepWeightQuality" /></div>
+          </div>
+        </div>
 
-  let qualifyingDays = 0;
+        <div class="card span-6">
+          <h2>App preferences</h2>
+          <div class="two">
+            <div><label for="themeMode">Theme</label><select id="themeMode"><option value="dark">Dark</option><option value="light">Light</option></select></div>
+            <div><label for="weekStartsOn">Week starts on</label><select id="weekStartsOn"><option value="0">Sunday</option><option value="1">Monday</option></select></div>
+          </div>
+        </div>
 
-  last7.forEach(d => {
-    let total = d.cardio + d.walking + d.strength + d.yoga;
-    if (total >= 120) qualifyingDays++;
-  });
+        <div class="card">
+          <div class="button-row">
+            <button id="saveSettingsBtn" class="good">Save settings</button>
+            <button id="resetSettingsBtn" class="warn">Reset settings to defaults</button>
+            <button id="exportDataBtn" class="secondary">Export data</button>
+            <button id="importDataBtn" class="secondary">Import data</button>
+            <input id="importFileInput" type="file" accept="application/json" class="hidden" />
+          </div>
+        </div>
+      </div>
+    </section>
 
-  weeklyStats.innerText =
-    `120+ min days: ${qualifyingDays}/5 goal`;
-}
+    <section id="tab-sync" class="hidden">
+      <div class="grid">
+        <div class="card span-8">
+          <h2>Cloud sync</h2>
+          <div class="subtle">This app works fully offline. For cross-device sync, add your Firebase config here, then sign in with the same email and password on each device.</div>
+          <div class="stack" style="margin-top:12px;">
+            <div>
+              <label for="firebaseConfigJson">Firebase web config JSON</label>
+              <textarea id="firebaseConfigJson" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+            </div>
+            <div class="two">
+              <div><label for="syncEmail">Email</label><input type="email" id="syncEmail" placeholder="you@example.com" /></div>
+              <div><label for="syncPassword">Password</label><input type="password" id="syncPassword" placeholder="Password" /></div>
+            </div>
+          </div>
+          <div class="button-row" style="margin-top:12px;">
+            <button id="saveFirebaseConfigBtn" class="secondary">Save Firebase config</button>
+            <button id="signupBtn" class="good">Create sync account</button>
+            <button id="signinBtn">Sign in</button>
+            <button id="signoutBtn" class="secondary">Sign out</button>
+            <button id="pushSyncBtn" class="secondary">Push local data to cloud</button>
+            <button id="pullSyncBtn" class="secondary">Pull cloud data to this device</button>
+          </div>
+        </div>
 
-updateWeekly();
-</script>
+        <div class="card span-4">
+          <h2>Sync status</h2>
+          <div class="kpi" id="syncKpis"></div>
+          <div class="subtle" id="syncDetails" style="margin-top:8px;">Not configured yet.</div>
+        </div>
+      </div>
+    </section>
+  </div>
 
+  <div class="nav">
+    <div class="nav-inner">
+      <button class="tab-btn active" data-tab="today">Today</button>
+      <button class="tab-btn" data-tab="review">Review</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+      <button class="tab-btn" data-tab="sync">Sync</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    const STORAGE_KEY = 'habit_tracker_v1_data';
+    const SETTINGS_KEY = 'habit_tracker_v1_settings';
+    const FIREBASE_CONFIG_KEY = 'habit_tracker_v1_firebase_config';
+    const APP_META_KEY = 'habit_tracker_v1_meta';
+
+    const DEFAULT_SETTINGS = {
+      themeMode: 'dark',
+      weekStartsOn: 0,
+      exercise: {
+        dailyThreshold: 120,
+        qualifyingDays: 5,
+        walkingCountsTowardDailyThreshold: true,
+        weeklyTargets: { cardio: 150, walking: 210, strength: 150, yoga: 180 }
+      },
+      prayer: {
+        minutesTarget: 20,
+        weights: { minutes: 50, morning: 15, examen: 15, scripture: 10, rosary: 10 }
+      },
+      diet: {
+        weights: { plan: 60, sugar: 20, late: 20 }
+      },
+      study: {
+        minutesTarget: 45,
+        weights: { time: 80, focus: 20 }
+      },
+      sleep: {
+        minHours: 7,
+        idealHours: 8,
+        bedtime: '22:30',
+        toleranceMinutes: 30,
+        weights: { hours: 50, bedtime: 25, quality: 25 }
+      }
+    };
+
+    const els = {};
+    document.querySelectorAll('[id]').forEach(el => els[el.id] = el);
+
+    const meta = getMeta();
+    let settings = getSettings();
+    let entries = getEntries();
+    let syncState = {
+      configured: false,
+      firebaseReady: false,
+      user: null,
+      app: null,
+      auth: null,
+      db: null,
+      sdk: null
+    };
+
+    init();
+
+    async function init() {
+      applyTheme();
+      setupDateLabels();
+      bindTabs();
+      bindInputs();
+      bindButtons();
+      populateSettingsForm();
+      populateSyncForm();
+      setEntryDate(todayString());
+      loadEntryIntoForm(getEntryByDate(todayString()) || blankEntry(todayString()));
+      await maybeInitFirebase();
+      renderAll();
+      registerServiceWorker();
+    }
+
+    function bindTabs() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const tab = btn.dataset.tab;
+          ['today','review','settings','sync'].forEach(name => {
+            document.getElementById(`tab-${name}`).classList.toggle('hidden', name !== tab);
+          });
+          renderAll();
+        });
+      });
+    }
+
+    function bindInputs() {
+      [
+        'entryDate','overallNotes','exCardio','exWalking','exStrength','exYoga','prayerMinutes','prayerOther',
+        'prMorning','prExamen','prScripture','prRosary','dietPlan','dietSugar','dietLate','studyMinutes',
+        'studyFocus','studyTopic','sleepHours','sleepQuality','bedtime'
+      ].forEach(id => {
+        els[id].addEventListener('input', renderTodayPreview);
+        els[id].addEventListener('change', renderTodayPreview);
+      });
+
+      els.entryDate.addEventListener('change', () => {
+        const entry = getEntryByDate(els.entryDate.value) || blankEntry(els.entryDate.value);
+        loadEntryIntoForm(entry);
+        renderAll();
+      });
+    }
+
+    function bindButtons() {
+      els.saveDayBtn.addEventListener('click', saveCurrentEntry);
+      els.newDayBtn.addEventListener('click', () => loadEntryIntoForm(blankEntry(els.entryDate.value || todayString())));
+      els.deleteDayBtn.addEventListener('click', deleteCurrentEntry);
+      els.saveSettingsBtn.addEventListener('click', saveSettingsFromForm);
+      els.resetSettingsBtn.addEventListener('click', resetSettingsToDefaults);
+      els.exportDataBtn.addEventListener('click', exportAllData);
+      els.importDataBtn.addEventListener('click', () => els.importFileInput.click());
+      els.importFileInput.addEventListener('change', importAllData);
+      els.saveFirebaseConfigBtn.addEventListener('click', saveFirebaseConfig);
+      els.signupBtn.addEventListener('click', handleSignUp);
+      els.signinBtn.addEventListener('click', handleSignIn);
+      els.signoutBtn.addEventListener('click', handleSignOut);
+      els.pushSyncBtn.addEventListener('click', pushCloud);
+      els.pullSyncBtn.addEventListener('click', pullCloud);
+      els.themeMode.addEventListener('change', () => {
+        document.body.classList.toggle('light', els.themeMode.value === 'light');
+      });
+    }
+
+    function setupDateLabels() {
+      const now = new Date();
+      els.todayLabel.textContent = now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function renderAll() {
+      renderTodayPreview();
+      renderWeeklyReview();
+      renderMonthlyReview();
+      renderRecentEntries();
+      renderSyncStatus();
+      settings = getSettings();
+      entries = getEntries();
+    }
+
+    function renderTodayPreview() {
+      const entry = currentFormEntry();
+      const scores = scoreEntry(entry, settings);
+
+      els.todayExerciseTotal.textContent = `${entry.exercise.cardio + entry.exercise.walking + entry.exercise.strength + entry.exercise.yoga} min`;
+      els.todayPrayerTotal.textContent = `${entry.prayer.minutes} min`;
+      els.todayStudyTotal.textContent = `${entry.study.minutes} min`;
+      els.todaySleepTotal.textContent = `${entry.sleep.hours || 0} h`;
+
+      renderProgress('exercise', scores.exercise.percentage, `${scores.exercise.percentage}%`);
+      renderProgress('prayer', scores.prayer.percentage, `${scores.prayer.percentage}%`);
+      renderProgress('diet', scores.diet.percentage, `${scores.diet.percentage}%`);
+      renderProgress('study', scores.study.percentage, `${scores.study.percentage}%`);
+      renderProgress('sleep', scores.sleep.percentage, `${scores.sleep.percentage}%`);
+
+      els.exerciseMinutesValue.textContent = `${entry.exercise.cardio + entry.exercise.walking + entry.exercise.strength + entry.exercise.yoga} min`;
+      els.exerciseThresholdValue.textContent = `${settings.exercise.dailyThreshold} min`;
+      const overall = scores.overall;
+      els.dayScoreBadge.textContent = `Overall ${overall}%`;
+      els.dayScoreBadge.className = `badge ${scoreClass(overall)}`;
+    }
+
+    function renderProgress(prefix, percentage, badgeText) {
+      document.getElementById(`${prefix}Badge`).textContent = badgeText;
+      document.getElementById(`${prefix}Badge`).className = `badge ${scoreClass(percentage)}`;
+      document.getElementById(`${prefix}Progress`).style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+    }
+
+    function renderWeeklyReview() {
+      const refDate = parseLocalDate(els.entryDate.value || todayString());
+      const [start, end] = getWeekRange(refDate, settings.weekStartsOn);
+      const weekEntries = entriesInRange(start, end);
+      els.weekRangeBadge.textContent = `${formatShort(start)} – ${formatShort(end)}`;
+
+      const weekly = aggregatePeriod(weekEntries, settings, 'week');
+      els.weeklyKpis.innerHTML = [
+        kpiHtml('Days logged', weekEntries.length),
+        kpiHtml('Avg overall', `${weekly.overallAverage}%`),
+        kpiHtml('Exercise threshold days', `${weekly.exercise.qualifyingDays}/${settings.exercise.qualifyingDays}`),
+        kpiHtml('Rosary days', `${weekly.prayer.rosaryDays}`)
+      ].join('');
+
+      els.weeklyTable.innerHTML = `
+        ${reviewRow('Diet', weekly.averages.diet, `${weekly.onTarget.diet} on-target days`, 'Followed plan / no sugar / no late eating')}
+        ${reviewRow('Exercise', weekly.averages.exercise, `${weekly.exercise.qualifyingDays}/${settings.exercise.qualifyingDays} threshold days`, `${weekly.exercise.totalMinutes} total minutes`) }
+        ${reviewRow('Prayer', weekly.averages.prayer, `${weekly.onTarget.prayer} on-target days`, `${weekly.prayer.totalMinutes} min, rosary ${weekly.prayer.rosaryDays} days`) }
+        ${reviewRow('Study', weekly.averages.study, `${weekly.onTarget.study} on-target days`, `${weekly.study.totalMinutes} min`) }
+        ${reviewRow('Sleep', weekly.averages.sleep, `${weekly.onTarget.sleep} on-target days`, `${weekly.sleep.averageHours.toFixed(1)} h avg`) }
+      `;
+
+      els.exerciseWeeklyKpis.innerHTML = [
+        kpiHtml('Cardio', `${weekly.exercise.byType.cardio}/${settings.exercise.weeklyTargets.cardio}`),
+        kpiHtml('Walking', `${weekly.exercise.byType.walking}/${settings.exercise.weeklyTargets.walking}`),
+        kpiHtml('Strength', `${weekly.exercise.byType.strength}/${settings.exercise.weeklyTargets.strength}`),
+        kpiHtml('Yoga', `${weekly.exercise.byType.yoga}/${settings.exercise.weeklyTargets.yoga}`)
+      ].join('');
+    }
+
+    function renderMonthlyReview() {
+      const refDate = parseLocalDate(els.entryDate.value || todayString());
+      const start = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+      const end = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
+      const monthEntries = entriesInRange(start, end);
+      els.monthRangeBadge.textContent = refDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+      const monthly = aggregatePeriod(monthEntries, settings, 'month');
+      els.monthlyKpis.innerHTML = [
+        kpiHtml('Days logged', monthEntries.length),
+        kpiHtml('Avg overall', `${monthly.overallAverage}%`),
+        kpiHtml('Strongest', monthly.strongest),
+        kpiHtml('Weakest', monthly.weakest)
+      ].join('');
+
+      els.monthlyTable.innerHTML = `
+        ${reviewRow('Diet', monthly.averages.diet, `${monthly.onTarget.diet} days`, 'Daily diet adherence')}
+        ${reviewRow('Exercise', monthly.averages.exercise, `${monthly.onTarget.exercise} days`, `${monthly.exercise.totalMinutes} total minutes`) }
+        ${reviewRow('Prayer', monthly.averages.prayer, `${monthly.onTarget.prayer} days`, `${monthly.prayer.rosaryDays} rosary days`) }
+        ${reviewRow('Study', monthly.averages.study, `${monthly.onTarget.study} days`, `${monthly.study.totalMinutes} min`) }
+        ${reviewRow('Sleep', monthly.averages.sleep, `${monthly.onTarget.sleep} days`, `${monthly.sleep.averageHours.toFixed(1)} h avg`) }
+      `;
+    }
+
+    function renderRecentEntries() {
+      const sorted = [...entries].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 12);
+      els.recentEntriesList.innerHTML = sorted.length ? sorted.map(entry => {
+        const score = scoreEntry(entry, settings).overall;
+        return `<button class="secondary" style="width:100%; text-align:left;" data-date="${entry.date}">${entry.date} · ${score}%</button>`;
+      }).join('') : `<div class="subtle">No entries yet.</div>`;
+      els.recentEntriesList.querySelectorAll('button[data-date]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setEntryDate(btn.dataset.date);
+          loadEntryIntoForm(getEntryByDate(btn.dataset.date));
+          document.querySelector('[data-tab="today"]').click();
+        });
+      });
+    }
+
+    function renderSyncStatus() {
+      const config = getFirebaseConfig();
+      syncState.configured = !!config;
+      els.syncStatusLabel.textContent = syncState.user ? `Synced: ${syncState.user.email}` : (config ? 'Sync configured' : 'Local only');
+      els.syncKpis.innerHTML = [
+        kpiHtml('Configured', config ? 'Yes' : 'No'),
+        kpiHtml('Signed in', syncState.user ? 'Yes' : 'No'),
+        kpiHtml('Entries', entries.length),
+        kpiHtml('Theme', settings.themeMode)
+      ].join('');
+      els.syncDetails.textContent = syncState.user ? `Signed in as ${syncState.user.email}` : (config ? 'Firebase config saved. Sign in to sync.' : 'Paste your Firebase web config to enable cloud sync across devices.');
+    }
+
+    function saveCurrentEntry() {
+      const entry = currentFormEntry();
+      const idx = entries.findIndex(e => e.date === entry.date);
+      if (idx >= 0) entries[idx] = entry; else entries.push(entry);
+      entries.sort((a,b) => a.date.localeCompare(b.date));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      saveMeta({ ...meta, lastSavedAt: new Date().toISOString() });
+      toast('Day saved');
+      renderAll();
+    }
+
+    function deleteCurrentEntry() {
+      const date = els.entryDate.value;
+      if (!date) return;
+      const next = entries.filter(e => e.date !== date);
+      if (next.length === entries.length) {
+        toast('No entry to delete');
+        return;
+      }
+      entries = next;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      loadEntryIntoForm(blankEntry(date));
+      toast('Entry deleted');
+      renderAll();
+    }
+
+    function saveSettingsFromForm() {
+      const next = structuredClone(DEFAULT_SETTINGS);
+      next.themeMode = els.themeMode.value;
+      next.weekStartsOn = Number(els.weekStartsOn.value);
+      next.exercise.dailyThreshold = Number(els.setExerciseDailyThreshold.value || 0);
+      next.exercise.qualifyingDays = Number(els.setExerciseQualifyingDays.value || 0);
+      next.exercise.walkingCountsTowardDailyThreshold = els.setWalkingCounts.value === 'true';
+      next.exercise.weeklyTargets.cardio = Number(els.setWeeklyCardio.value || 0);
+      next.exercise.weeklyTargets.walking = Number(els.setWeeklyWalking.value || 0);
+      next.exercise.weeklyTargets.strength = Number(els.setWeeklyStrength.value || 0);
+      next.exercise.weeklyTargets.yoga = Number(els.setWeeklyYoga.value || 0);
+      next.prayer.minutesTarget = Number(els.setPrayerMin.value || 0);
+      next.prayer.weights.minutes = Number(els.setPrayerWeightMinutes.value || 0);
+      next.prayer.weights.morning = Number(els.setPrayerWeightMorning.value || 0);
+      next.prayer.weights.examen = Number(els.setPrayerWeightExamen.value || 0);
+      next.prayer.weights.scripture = Number(els.setPrayerWeightScripture.value || 0);
+      next.prayer.weights.rosary = Number(els.setPrayerWeightRosary.value || 0);
+      next.diet.weights.plan = Number(els.setDietWeightPlan.value || 0);
+      next.diet.weights.sugar = Number(els.setDietWeightSugar.value || 0);
+      next.diet.weights.late = Number(els.setDietWeightLate.value || 0);
+      next.study.minutesTarget = Number(els.setStudyMinutes.value || 0);
+      next.study.weights.time = Number(els.setStudyWeightTime.value || 0);
+      next.study.weights.focus = Number(els.setStudyWeightFocus.value || 0);
+      next.sleep.minHours = Number(els.setSleepMin.value || 0);
+      next.sleep.idealHours = Number(els.setSleepIdeal.value || 0);
+      next.sleep.bedtime = els.setSleepBedtime.value || '22:30';
+      next.sleep.toleranceMinutes = Number(els.setSleepTolerance.value || 0);
+      next.sleep.weights.hours = Number(els.setSleepWeightHours.value || 0);
+      next.sleep.weights.bedtime = Number(els.setSleepWeightBedtime.value || 0);
+      next.sleep.weights.quality = Number(els.setSleepWeightQuality.value || 0);
+
+      settings = next;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+      applyTheme();
+      toast('Settings saved');
+      renderAll();
+    }
+
+    function resetSettingsToDefaults() {
+      settings = structuredClone(DEFAULT_SETTINGS);
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      populateSettingsForm();
+      applyTheme();
+      toast('Settings reset');
+      renderAll();
+    }
+
+    function populateSettingsForm() {
+      settings = getSettings();
+      els.themeMode.value = settings.themeMode;
+      els.weekStartsOn.value = String(settings.weekStartsOn);
+      els.setExerciseDailyThreshold.value = settings.exercise.dailyThreshold;
+      els.setExerciseQualifyingDays.value = settings.exercise.qualifyingDays;
+      els.setWalkingCounts.value = String(settings.exercise.walkingCountsTowardDailyThreshold);
+      els.setWeeklyCardio.value = settings.exercise.weeklyTargets.cardio;
+      els.setWeeklyWalking.value = settings.exercise.weeklyTargets.walking;
+      els.setWeeklyStrength.value = settings.exercise.weeklyTargets.strength;
+      els.setWeeklyYoga.value = settings.exercise.weeklyTargets.yoga;
+      els.setPrayerMin.value = settings.prayer.minutesTarget;
+      els.setPrayerWeightMinutes.value = settings.prayer.weights.minutes;
+      els.setPrayerWeightMorning.value = settings.prayer.weights.morning;
+      els.setPrayerWeightExamen.value = settings.prayer.weights.examen;
+      els.setPrayerWeightScripture.value = settings.prayer.weights.scripture;
+      els.setPrayerWeightRosary.value = settings.prayer.weights.rosary;
+      els.setDietWeightPlan.value = settings.diet.weights.plan;
+      els.setDietWeightSugar.value = settings.diet.weights.sugar;
+      els.setDietWeightLate.value = settings.diet.weights.late;
+      els.setStudyMinutes.value = settings.study.minutesTarget;
+      els.setStudyWeightTime.value = settings.study.weights.time;
+      els.setStudyWeightFocus.value = settings.study.weights.focus;
+      els.setSleepMin.value = settings.sleep.minHours;
+      els.setSleepIdeal.value = settings.sleep.idealHours;
+      els.setSleepBedtime.value = settings.sleep.bedtime;
+      els.setSleepTolerance.value = settings.sleep.toleranceMinutes;
+      els.setSleepWeightHours.value = settings.sleep.weights.hours;
+      els.setSleepWeightBedtime.value = settings.sleep.weights.bedtime;
+      els.setSleepWeightQuality.value = settings.sleep.weights.quality;
+      applyTheme();
+    }
+
+    function applyTheme() {
+      settings = getSettings();
+      document.body.classList.toggle('light', settings.themeMode === 'light');
+    }
+
+    function exportAllData() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        app: 'Habit Performance Tracker',
+        settings: getSettings(),
+        entries: getEntries(),
+        firebaseConfig: getFirebaseConfig() || null
+      };
+      downloadJson(`habit-tracker-export-${todayString()}.json`, payload);
+      toast('Export created');
+    }
+
+    async function importAllData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const payload = JSON.parse(text);
+        if (payload.settings) localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload.settings));
+        if (Array.isArray(payload.entries)) localStorage.setItem(STORAGE_KEY, JSON.stringify(payload.entries));
+        if (payload.firebaseConfig) localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(payload.firebaseConfig));
+        settings = getSettings();
+        entries = getEntries();
+        populateSettingsForm();
+        populateSyncForm();
+        loadEntryIntoForm(getEntryByDate(els.entryDate.value) || blankEntry(els.entryDate.value));
+        toast('Import complete');
+        await maybeInitFirebase();
+        renderAll();
+      } catch (err) {
+        console.error(err);
+        toast('Import failed');
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    function populateSyncForm() {
+      const config = getFirebaseConfig();
+      els.firebaseConfigJson.value = config ? JSON.stringify(config, null, 2) : '';
+    }
+
+    function saveFirebaseConfig() {
+      try {
+        const text = els.firebaseConfigJson.value.trim();
+        if (!text) {
+          localStorage.removeItem(FIREBASE_CONFIG_KEY);
+          toast('Firebase config cleared');
+          return;
+        }
+        const parsed = JSON.parse(text);
+        localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(parsed));
+        toast('Firebase config saved');
+        maybeInitFirebase();
+        renderAll();
+      } catch (err) {
+        console.error(err);
+        toast('Invalid Firebase JSON');
+      }
+    }
+
+    async function maybeInitFirebase() {
+      const config = getFirebaseConfig();
+      if (!config) {
+        syncState = { configured: false, firebaseReady: false, user: null, app: null, auth: null, db: null, sdk: null };
+        renderSyncStatus();
+        return;
+      }
+      try {
+        const sdk = await importFirebaseSdk();
+        if (!syncState.app) {
+          const app = sdk.initializeApp(config);
+          const auth = sdk.getAuth(app);
+          const db = sdk.getFirestore(app);
+          syncState = { ...syncState, configured: true, firebaseReady: true, app, auth, db, sdk };
+          sdk.onAuthStateChanged(auth, user => {
+            syncState.user = user || null;
+            renderSyncStatus();
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        toast('Firebase setup failed');
+      }
+      renderSyncStatus();
+    }
+
+    async function importFirebaseSdk() {
+      if (syncState.sdk) return syncState.sdk;
+      const appMod = await import('https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js');
+      const authMod = await import('https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js');
+      const fireMod = await import('https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js');
+      syncState.sdk = { ...appMod, ...authMod, ...fireMod };
+      return syncState.sdk;
+    }
+
+    async function handleSignUp() {
+      if (!ensureSyncReady()) return;
+      try {
+        await syncState.sdk.createUserWithEmailAndPassword(syncState.auth, els.syncEmail.value, els.syncPassword.value);
+        toast('Sync account created');
+      } catch (err) {
+        console.error(err);
+        toast(err.message || 'Could not create account');
+      }
+    }
+
+    async function handleSignIn() {
+      if (!ensureSyncReady()) return;
+      try {
+        await syncState.sdk.signInWithEmailAndPassword(syncState.auth, els.syncEmail.value, els.syncPassword.value);
+        toast('Signed in');
+      } catch (err) {
+        console.error(err);
+        toast(err.message || 'Could not sign in');
+      }
+    }
+
+    async function handleSignOut() {
+      if (!syncState.auth) return;
+      await syncState.sdk.signOut(syncState.auth);
+      toast('Signed out');
+    }
+
+    async function pushCloud() {
+      if (!ensureSyncUser()) return;
+      try {
+        const ref = syncState.sdk.doc(syncState.db, 'users', syncState.user.uid, 'app', 'habitTracker');
+        await syncState.sdk.setDoc(ref, {
+          updatedAt: new Date().toISOString(),
+          settings: getSettings(),
+          entries: getEntries()
+        }, { merge: true });
+        toast('Cloud updated');
+      } catch (err) {
+        console.error(err);
+        toast(err.message || 'Push failed');
+      }
+    }
+
+    async function pullCloud() {
+      if (!ensureSyncUser()) return;
+      try {
+        const ref = syncState.sdk.doc(syncState.db, 'users', syncState.user.uid, 'app', 'habitTracker');
+        const snap = await syncState.sdk.getDoc(ref);
+        if (!snap.exists()) {
+          toast('No cloud data found');
+          return;
+        }
+        const data = snap.data();
+        if (data.settings) localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings));
+        if (Array.isArray(data.entries)) localStorage.setItem(STORAGE_KEY, JSON.stringify(data.entries));
+        settings = getSettings();
+        entries = getEntries();
+        populateSettingsForm();
+        loadEntryIntoForm(getEntryByDate(els.entryDate.value) || blankEntry(els.entryDate.value));
+        toast('Cloud data loaded');
+        renderAll();
+      } catch (err) {
+        console.error(err);
+        toast(err.message || 'Pull failed');
+      }
+    }
+
+    function ensureSyncReady() {
+      if (!getFirebaseConfig()) {
+        toast('Add Firebase config first');
+        return false;
+      }
+      if (!syncState.firebaseReady) {
+        toast('Firebase not ready yet');
+        return false;
+      }
+      return true;
+    }
+
+    function ensureSyncUser() {
+      if (!ensureSyncReady()) return false;
+      if (!syncState.user) {
+        toast('Sign in first');
+        return false;
+      }
+      return true;
+    }
+
+    function currentFormEntry() {
+      return {
+        date: els.entryDate.value || todayString(),
+        notes: els.overallNotes.value.trim(),
+        exercise: {
+          cardio: Number(els.exCardio.value || 0),
+          walking: Number(els.exWalking.value || 0),
+          strength: Number(els.exStrength.value || 0),
+          yoga: Number(els.exYoga.value || 0)
+        },
+        prayer: {
+          minutes: Number(els.prayerMinutes.value || 0),
+          morning: els.prMorning.checked,
+          examen: els.prExamen.checked,
+          scripture: els.prScripture.checked,
+          rosary: els.prRosary.checked,
+          other: els.prayerOther.value.trim()
+        },
+        diet: {
+          plan: els.dietPlan.checked,
+          sugar: els.dietSugar.checked,
+          late: els.dietLate.checked
+        },
+        study: {
+          minutes: Number(els.studyMinutes.value || 0),
+          focus: els.studyFocus.value,
+          topic: els.studyTopic.value.trim()
+        },
+        sleep: {
+          hours: Number(els.sleepHours.value || 0),
+          quality: Number(els.sleepQuality.value || 3),
+          bedtime: els.bedtime.value || ''
+        }
+      };
+    }
+
+    function loadEntryIntoForm(entry) {
+      els.entryDate.value = entry.date;
+      els.overallNotes.value = entry.notes || '';
+      els.exCardio.value = entry.exercise.cardio || '';
+      els.exWalking.value = entry.exercise.walking || '';
+      els.exStrength.value = entry.exercise.strength || '';
+      els.exYoga.value = entry.exercise.yoga || '';
+      els.prayerMinutes.value = entry.prayer.minutes || '';
+      els.prayerOther.value = entry.prayer.other || '';
+      els.prMorning.checked = !!entry.prayer.morning;
+      els.prExamen.checked = !!entry.prayer.examen;
+      els.prScripture.checked = !!entry.prayer.scripture;
+      els.prRosary.checked = !!entry.prayer.rosary;
+      els.dietPlan.checked = !!entry.diet.plan;
+      els.dietSugar.checked = !!entry.diet.sugar;
+      els.dietLate.checked = !!entry.diet.late;
+      els.studyMinutes.value = entry.study.minutes || '';
+      els.studyFocus.value = entry.study.focus || 'high';
+      els.studyTopic.value = entry.study.topic || '';
+      els.sleepHours.value = entry.sleep.hours || '';
+      els.sleepQuality.value = String(entry.sleep.quality || 3);
+      els.bedtime.value = entry.sleep.bedtime || '';
+      renderTodayPreview();
+    }
+
+    function blankEntry(date) {
+      return {
+        date,
+        notes: '',
+        exercise: { cardio: 0, walking: 0, strength: 0, yoga: 0 },
+        prayer: { minutes: 0, morning: false, examen: false, scripture: false, rosary: false, other: '' },
+        diet: { plan: false, sugar: false, late: false },
+        study: { minutes: 0, focus: 'high', topic: '' },
+        sleep: { hours: 0, quality: 3, bedtime: '' }
+      };
+    }
+
+    function scoreEntry(entry, settings) {
+      const exerciseDailyMinutes = entry.exercise.cardio + entry.exercise.strength + entry.exercise.yoga + (settings.exercise.walkingCountsTowardDailyThreshold ? entry.exercise.walking : 0);
+      const exercisePct = clamp(Math.round((exerciseDailyMinutes / Math.max(settings.exercise.dailyThreshold, 1)) * 100));
+
+      const prayerWeights = settings.prayer.weights;
+      const prayerTotalWeight = sum(Object.values(prayerWeights));
+      const prayerMinutesScore = Math.min(entry.prayer.minutes / Math.max(settings.prayer.minutesTarget, 1), 1) * prayerWeights.minutes;
+      const prayerOtherScore =
+        (entry.prayer.morning ? prayerWeights.morning : 0) +
+        (entry.prayer.examen ? prayerWeights.examen : 0) +
+        (entry.prayer.scripture ? prayerWeights.scripture : 0) +
+        (entry.prayer.rosary ? prayerWeights.rosary : 0);
+      const prayerPct = clamp(Math.round(((prayerMinutesScore + prayerOtherScore) / Math.max(prayerTotalWeight, 1)) * 100));
+
+      const dietWeights = settings.diet.weights;
+      const dietPct = clamp(Math.round((((entry.diet.plan ? dietWeights.plan : 0) + (entry.diet.sugar ? dietWeights.sugar : 0) + (entry.diet.late ? dietWeights.late : 0)) / Math.max(sum(Object.values(dietWeights)), 1)) * 100));
+
+      const studyWeights = settings.study.weights;
+      const timeScore = Math.min(entry.study.minutes / Math.max(settings.study.minutesTarget, 1), 1) * studyWeights.time;
+      const focusMap = { high: studyWeights.focus, medium: studyWeights.focus / 2, low: 0 };
+      const studyPct = clamp(Math.round(((timeScore + (focusMap[entry.study.focus] || 0)) / Math.max(studyWeights.time + studyWeights.focus, 1)) * 100));
+
+      const sleepWeights = settings.sleep.weights;
+      const hoursDenom = Math.max(settings.sleep.idealHours || settings.sleep.minHours || 1, 1);
+      const hoursRatio = entry.sleep.hours >= settings.sleep.minHours ? Math.min(entry.sleep.hours / hoursDenom, 1) : Math.max((entry.sleep.hours / Math.max(settings.sleep.minHours,1)) * 0.7, 0);
+      const hoursScore = hoursRatio * sleepWeights.hours;
+      const bedtimeScore = bedtimeCloseness(entry.sleep.bedtime, settings.sleep.bedtime, settings.sleep.toleranceMinutes) * sleepWeights.bedtime;
+      const qualityScore = (Number(entry.sleep.quality || 0) / 5) * sleepWeights.quality;
+      const sleepPct = clamp(Math.round(((hoursScore + bedtimeScore + qualityScore) / Math.max(sum(Object.values(sleepWeights)),1)) * 100));
+
+      const overall = Math.round((exercisePct + prayerPct + dietPct + studyPct + sleepPct) / 5);
+      return {
+        exercise: { percentage: exercisePct, onTarget: exercisePct >= 85 },
+        prayer: { percentage: prayerPct, onTarget: prayerPct >= 85 },
+        diet: { percentage: dietPct, onTarget: dietPct >= 85 },
+        study: { percentage: studyPct, onTarget: studyPct >= 85 },
+        sleep: { percentage: sleepPct, onTarget: sleepPct >= 85 },
+        overall
+      };
+    }
+
+    function aggregatePeriod(periodEntries, settings) {
+      const base = {
+        overallAverage: 0,
+        averages: { diet: 0, exercise: 0, prayer: 0, study: 0, sleep: 0 },
+        onTarget: { diet: 0, exercise: 0, prayer: 0, study: 0, sleep: 0 },
+        exercise: { qualifyingDays: 0, byType: { cardio: 0, walking: 0, strength: 0, yoga: 0 }, totalMinutes: 0 },
+        prayer: { rosaryDays: 0, totalMinutes: 0 },
+        study: { totalMinutes: 0 },
+        sleep: { averageHours: 0 },
+        strongest: '—',
+        weakest: '—'
+      };
+      if (!periodEntries.length) return base;
+
+      const totalScores = { diet: 0, exercise: 0, prayer: 0, study: 0, sleep: 0, overall: 0 };
+      let totalSleepHours = 0;
+
+      periodEntries.forEach(entry => {
+        const scores = scoreEntry(entry, settings);
+        totalScores.diet += scores.diet.percentage;
+        totalScores.exercise += scores.exercise.percentage;
+        totalScores.prayer += scores.prayer.percentage;
+        totalScores.study += scores.study.percentage;
+        totalScores.sleep += scores.sleep.percentage;
+        totalScores.overall += scores.overall;
+        if (scores.diet.onTarget) base.onTarget.diet++;
+        if (scores.exercise.onTarget) base.onTarget.exercise++;
+        if (scores.prayer.onTarget) base.onTarget.prayer++;
+        if (scores.study.onTarget) base.onTarget.study++;
+        if (scores.sleep.onTarget) base.onTarget.sleep++;
+
+        const thresholdMinutes = entry.exercise.cardio + entry.exercise.strength + entry.exercise.yoga + (settings.exercise.walkingCountsTowardDailyThreshold ? entry.exercise.walking : 0);
+        if (thresholdMinutes >= settings.exercise.dailyThreshold) base.exercise.qualifyingDays++;
+
+        base.exercise.byType.cardio += entry.exercise.cardio;
+        base.exercise.byType.walking += entry.exercise.walking;
+        base.exercise.byType.strength += entry.exercise.strength;
+        base.exercise.byType.yoga += entry.exercise.yoga;
+        base.exercise.totalMinutes += entry.exercise.cardio + entry.exercise.walking + entry.exercise.strength + entry.exercise.yoga;
+        base.prayer.totalMinutes += entry.prayer.minutes;
+        if (entry.prayer.rosary) base.prayer.rosaryDays++;
+        base.study.totalMinutes += entry.study.minutes;
+        totalSleepHours += entry.sleep.hours || 0;
+      });
+
+      const n = periodEntries.length;
+      base.averages.diet = Math.round(totalScores.diet / n);
+      base.averages.exercise = Math.round(totalScores.exercise / n);
+      base.averages.prayer = Math.round(totalScores.prayer / n);
+      base.averages.study = Math.round(totalScores.study / n);
+      base.averages.sleep = Math.round(totalScores.sleep / n);
+      base.overallAverage = Math.round(totalScores.overall / n);
+      base.sleep.averageHours = totalSleepHours / n;
+
+      const avgPairs = Object.entries(base.averages);
+      avgPairs.sort((a,b) => b[1] - a[1]);
+      base.strongest = capitalize(avgPairs[0][0]);
+      base.weakest = capitalize(avgPairs[avgPairs.length - 1][0]);
+      return base;
+    }
+
+    function getEntries() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+    }
+
+    function getSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+        return saved ? deepMerge(structuredClone(DEFAULT_SETTINGS), saved) : structuredClone(DEFAULT_SETTINGS);
+      } catch {
+        return structuredClone(DEFAULT_SETTINGS);
+      }
+    }
+
+    function getMeta() {
+      try { return JSON.parse(localStorage.getItem(APP_META_KEY)) || {}; } catch { return {}; }
+    }
+
+    function saveMeta(value) {
+      localStorage.setItem(APP_META_KEY, JSON.stringify(value));
+    }
+
+    function getFirebaseConfig() {
+      try { return JSON.parse(localStorage.getItem(FIREBASE_CONFIG_KEY)); } catch { return null; }
+    }
+
+    function getEntryByDate(date) {
+      return getEntries().find(e => e.date === date);
+    }
+
+    function setEntryDate(date) {
+      els.entryDate.value = date;
+    }
+
+    function entriesInRange(start, end) {
+      const s = start.toISOString().slice(0,10);
+      const e = end.toISOString().slice(0,10);
+      return getEntries().filter(entry => entry.date >= s && entry.date <= e).sort((a,b) => a.date.localeCompare(b.date));
+    }
+
+    function reviewRow(name, average, status, details) {
+      return `<tr><td>${name}</td><td><span class="badge ${scoreClass(average)}">${average}%</span></td><td>${status}</td><td>${details}</td></tr>`;
+    }
+
+    function kpiHtml(label, value) {
+      return `<div class="box"><div class="subtle">${label}</div><div class="value">${value}</div></div>`;
+    }
+
+    function scoreClass(v) {
+      if (v >= 85) return 'good';
+      if (v >= 50) return 'warn';
+      return 'bad';
+    }
+
+    function clamp(v) { return Math.max(0, Math.min(100, Math.round(v))); }
+    function sum(arr) { return arr.reduce((a,b) => a + Number(b || 0), 0); }
+    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+    function todayString() { return new Date().toISOString().slice(0,10); }
+
+    function bedtimeCloseness(actual, target, toleranceMinutes) {
+      if (!actual || !target) return 0;
+      const actualMin = timeToMinutes(actual);
+      const targetMin = timeToMinutes(target);
+      let diff = Math.abs(actualMin - targetMin);
+      diff = Math.min(diff, 1440 - diff);
+      if (diff <= toleranceMinutes) return 1;
+      if (diff >= toleranceMinutes * 3) return 0;
+      return 1 - ((diff - toleranceMinutes) / Math.max(toleranceMinutes * 2, 1));
+    }
+
+    function timeToMinutes(str) {
+      const [h,m] = str.split(':').map(Number);
+      return (h * 60) + m;
+    }
+
+    function formatShort(date) {
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function parseLocalDate(yyyyMmDd) {
+      const [y,m,d] = yyyyMmDd.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function getWeekRange(date, weekStartsOn = 0) {
+      const start = new Date(date);
+      const day = start.getDay();
+      const diff = (day - weekStartsOn + 7) % 7;
+      start.setDate(start.getDate() - diff);
+      start.setHours(0,0,0,0);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23,59,59,999);
+      return [start, end];
+    }
+
+    function downloadJson(filename, obj) {
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function deepMerge(base, update) {
+      Object.keys(update || {}).forEach(key => {
+        if (update[key] && typeof update[key] === 'object' && !Array.isArray(update[key])) {
+          base[key] = deepMerge(base[key] || {}, update[key]);
+        } else {
+          base[key] = update[key];
+        }
+      });
+      return base;
+    }
+
+    function toast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => els.toast.classList.remove('show'), 2200);
+    }
+
+    async function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        try { await navigator.serviceWorker.register('./service-worker.js'); } catch (err) { console.error(err); }
+      }
+    }
+  </script>
 </body>
 </html>

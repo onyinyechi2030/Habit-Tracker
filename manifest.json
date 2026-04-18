@@ -1,0 +1,10 @@
+{
+  "name": "Habit Performance Tracker",
+  "short_name": "Habit Tracker",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#111827",
+  "description": "Daily habit tracker with settings-driven targets, weekly review, monthly review, and optional Firebase sync.",
+  "icons": []
+}
