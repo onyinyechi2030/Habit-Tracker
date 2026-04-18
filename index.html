@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #fff;
+  padding: 16px;
+}
+.card {
+  background: #1c1c1c;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+input, button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+}
+button {
+  background: #4caf50;
+  color: white;
+}
+h2 { margin-top: 0; }
+.small { font-size: 12px; color: #aaa; }
+</style>
+</head>
+
+<body>
+
+<h1>Daily Tracker</h1>
+
+<div class="card">
+<h2>Exercise</h2>
+<label>Cardio (min)</label>
+<input id="cardio" type="number">
+<label>Walking (min)</label>
+<input id="walking" type="number">
+<label>Strength (min)</label>
+<input id="strength" type="number">
+<label>Yoga (min)</label>
+<input id="yoga" type="number">
+<p id="exerciseTotal"></p>
+</div>
+
+<div class="card">
+<h2>Prayer</h2>
+<label>Minutes</label>
+<input id="prayerMin" type="number">
+<label><input type="checkbox" id="rosary"> Rosary</label>
+<label><input type="checkbox" id="morning"> Morning Prayer</label>
+<label><input type="checkbox" id="examen"> Examen</label>
+</div>
+
+<div class="card">
+<h2>Study</h2>
+<label>Minutes</label>
+<input id="studyMin" type="number">
+</div>
+
+<div class="card">
+<h2>Sleep</h2>
+<label>Hours</label>
+<input id="sleepHours" type="number" step="0.1">
+</div>
+
+<div class="card">
+<h2>Diet</h2>
+<label><input type="checkbox" id="dietPlan"> Followed Plan</label>
+<label><input type="checkbox" id="noSugar"> No Sugar</label>
+<label><input type="checkbox" id="noLate"> No Late Eating</label>
+</div>
+
+<button onclick="saveDay()">Save Day</button>
+
+<div class="card">
+<h2>Weekly Progress</h2>
+<p id="weeklyStats"></p>
+</div>
+
+<script>
+const STORAGE_KEY = "habitData";
+
+function getData() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function todayKey() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function saveDay() {
+  let data = getData();
+  let today = todayKey();
+
+  let entry = {
+    date: today,
+    cardio: +cardio.value || 0,
+    walking: +walking.value || 0,
+    strength: +strength.value || 0,
+    yoga: +yoga.value || 0,
+    prayerMin: +prayerMin.value || 0,
+    rosary: rosary.checked,
+    morning: morning.checked,
+    examen: examen.checked,
+    studyMin: +studyMin.value || 0,
+    sleepHours: +sleepHours.value || 0,
+    dietPlan: dietPlan.checked,
+    noSugar: noSugar.checked,
+    noLate: noLate.checked
+  };
+
+  data = data.filter(d => d.date !== today);
+  data.push(entry);
+  saveData(data);
+
+  updateWeekly();
+  alert("Saved");
+}
+
+function updateWeekly() {
+  let data = getData();
+  let last7 = data.slice(-7);
+
+  let qualifyingDays = 0;
+
+  last7.forEach(d => {
+    let total = d.cardio + d.walking + d.strength + d.yoga;
+    if (total >= 120) qualifyingDays++;
+  });
+
+  weeklyStats.innerText =
+    `120+ min days: ${qualifyingDays}/5 goal`;
+}
+
+updateWeekly();
+</script>
+
+</body>
+</html>
