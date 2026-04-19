@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habit Tracker</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e2430;
+      --text: #eef2f7;
+      --muted: #aab3c2;
+      --accent: #7aa2ff;
+      --accent-2: #9ed6b3;
+      --border: #2b3240;
+      --danger: #ff9090;
+      --warning: #ffd27d;
+      --success: #99e2a8;
+      --shadow: 0 8px 28px rgba(0,0,0,.22);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #0d1015 0%, #111622 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px 14px 88px;
+    }
+    .hero {
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .tabbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 8px;
+      background: rgba(13,16,21,.82);
+      backdrop-filter: blur(10px);
+      padding: 12px 0 14px;
+      margin-bottom: 14px;
+    }
+    .tabbtn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 8px;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+    .tabbtn.active {
+      background: var(--accent);
+      color: #09111f;
+      border-color: transparent;
+      font-weight: 700;
+    }
+    .tab {
+      display: none;
+    }
+    .tab.active {
+      display: block;
+    }
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .card h2, .card h3 {
+      margin: 0 0 10px;
+      letter-spacing: -.02em;
+    }
+    .card h2 { font-size: 1.15rem; }
+    .card h3 { font-size: 1rem; }
+    .muted { color: var(--muted); }
+    .small { font-size: .88rem; }
+    .tiny { font-size: .78rem; }
+    label {
+      display: block;
+      margin: 9px 0 6px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    input, textarea, select {
+      width: 100%;
+      background: #0f141d;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 12px;
+      outline: none;
+      font: inherit;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    input[type="checkbox"] {
+      width: auto;
+      transform: scale(1.1);
+      margin-right: 8px;
+      accent-color: var(--accent);
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      color: var(--text);
+    }
+    .row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .row.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      background: var(--accent);
+      color: #08101f;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .08s ease, opacity .2s ease;
+      margin-top: 10px;
+    }
+    button.secondary {
+      background: #273349;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.good { background: var(--accent-2); }
+    button.warn { background: var(--warning); color: #231500; }
+    button:active { transform: scale(.985); }
+    .stack > * + * { margin-top: 10px; }
+    .kpi {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    .kpi .box {
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .kpi .label { color: var(--muted); font-size: .82rem; }
+    .kpi .value { font-size: 1.5rem; font-weight: 800; margin-top: 4px; }
+    .progress-wrap { margin-top: 10px; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: .88rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .progress {
+      height: 10px;
+      background: #0d121b;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+    .table-like {
+      display: grid;
+      gap: 8px;
+    }
+    .table-row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1.2fr .8fr .8fr;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(255,255,255,.02);
+      align-items: center;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #111827;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      min-height: 44px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: .8rem;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .footer-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: .83rem;
+      line-height: 1.45;
+    }
+    @media (max-width: 900px) {
+      .grid.two, .grid.three, .row, .row.four { grid-template-columns: 1fr; }
+      .tabbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="hero">
+      <h1>Habit Tracker</h1>
+      <p>Daily logging, weekly and monthly review, editable targets, exercise and prayer breakdowns, and optional Firebase sync.</p>
+    </div>
+
+    <div class="tabbar">
+      <button class="tabbtn active" data-tab="dashboard">Dashboard</button>
+      <button class="tabbtn" data-tab="daily">Daily</button>
+      <button class="tabbtn" data-tab="weekly">Weekly</button>
+      <button class="tabbtn" data-tab="monthly">Monthly</button>
+      <button class="tabbtn" data-tab="exercise">Exercise</button>
+      <button class="tabbtn" data-tab="prayer">Prayer</button>
+      <button class="tabbtn" data-tab="settings">Settings</button>
+      <button class="tabbtn" data-tab="sync">Sync</button>
+    </div>
+
+
+    <section class="tab active" id="tab-dashboard">
+      <div class="grid two">
+        <div class="card">
+          <h2>Dashboard</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">Today score</div><div class="value" id="dashTodayScore">0%</div></div>
+            <div class="box"><div class="label">Today's exercise</div><div class="value" id="dashTodayExercise">0</div></div>
+            <div class="box"><div class="label">120+ min today</div><div class="value" id="dashTodayQualifying">No</div></div>
+            <div class="box"><div class="label">Rosary today</div><div class="value" id="dashTodayRosary">No</div></div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Diet today</span><span id="dashDietLabel">0%</span></div>
+            <div class="progress"><span id="dashDietBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Exercise today</span><span id="dashExerciseLabel">0%</span></div>
+            <div class="progress"><span id="dashExerciseBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Prayer today</span><span id="dashPrayerLabel">0%</span></div>
+            <div class="progress"><span id="dashPrayerBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Study today</span><span id="dashStudyLabel">0%</span></div>
+            <div class="progress"><span id="dashStudyBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Sleep today</span><span id="dashSleepLabel">0%</span></div>
+            <div class="progress"><span id="dashSleepBar"></span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Week at a Glance</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">Entries</div><div class="value" id="dashWeekEntries">0</div></div>
+            <div class="box"><div class="label">120+ min days</div><div class="value" id="dashWeekQualifying">0</div></div>
+            <div class="box"><div class="label">Target days</div><div class="value" id="dashWeekTargetDays">0</div></div>
+            <div class="box"><div class="label">Rosary days</div><div class="value" id="dashWeekRosary">0</div></div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Cardio weekly</span><span id="dashCardioTxt">0 / 0</span></div>
+            <div class="progress"><span id="dashCardioBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Walking weekly</span><span id="dashWalkingTxt">0 / 0</span></div>
+            <div class="progress"><span id="dashWalkingBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Strength weekly</span><span id="dashStrengthTxt">0 / 0</span></div>
+            <div class="progress"><span id="dashStrengthBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Yoga weekly</span><span id="dashYogaTxt">0 / 0</span></div>
+            <div class="progress"><span id="dashYogaBar"></span></div>
+          </div>
+
+          <div id="dashSummary" class="footer-note">Open Daily to log today’s entry, then return here for a quick overview.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-daily">
+      <div class="grid two">
+        <div class="card">
+          <h2>Daily Entry</h2>
+          <label for="entryDate">Date</label>
+          <input id="entryDate" type="date" />
+
+          <div class="row four">
+            <div>
+              <label for="cardioMin">Cardio min</label>
+              <input id="cardioMin" type="number" min="0" step="1" />
+            </div>
+            <div>
+              <label for="walkingMin">Walking min</label>
+              <input id="walkingMin" type="number" min="0" step="1" />
+            </div>
+            <div>
+              <label for="strengthMin">Strength min</label>
+              <input id="strengthMin" type="number" min="0" step="1" />
+            </div>
+            <div>
+              <label for="yogaMin">Yoga min</label>
+              <input id="yogaMin" type="number" min="0" step="1" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="prayerMin">Prayer min</label>
+              <input id="prayerMin" type="number" min="0" step="1" />
+            </div>
+            <div>
+              <label for="studyMin">Study min</label>
+              <input id="studyMin" type="number" min="0" step="1" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="sleepHours">Sleep hours</label>
+              <input id="sleepHours" type="number" min="0" max="24" step="0.1" />
+            </div>
+            <div>
+              <label for="sleepQuality">Sleep quality (1–5)</label>
+              <select id="sleepQuality">
+                <option value="">Select</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="studyFocus">Study focus</label>
+          <select id="studyFocus">
+            <option value="">Select</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+
+          <div class="checkbox-row"><input id="dietPlan" type="checkbox" /><span>Followed diet plan</span></div>
+          <div class="checkbox-row"><input id="noSugar" type="checkbox" /><span>No added sugar</span></div>
+          <div class="checkbox-row"><input id="noLate" type="checkbox" /><span>No late eating</span></div>
+          <div class="checkbox-row"><input id="morningPrayer" type="checkbox" /><span>Morning prayer</span></div>
+          <div class="checkbox-row"><input id="examen" type="checkbox" /><span>Examen</span></div>
+          <div class="checkbox-row"><input id="scripture" type="checkbox" /><span>Scripture</span></div>
+          <div class="checkbox-row"><input id="rosary" type="checkbox" /><span>Rosary</span></div>
+
+          <label for="dailyNotes">Notes</label>
+          <textarea id="dailyNotes" placeholder="Optional daily note"></textarea>
+
+          <button id="saveDayBtn">Save entry</button>
+          <button class="secondary" id="loadDayBtn">Load selected date</button>
+          <button class="ghost" id="resetDayBtn">Clear form</button>
+          <div class="status" id="dailyStatus">Ready.</div>
+        </div>
+
+        <div class="card">
+          <h2>Today Snapshot</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">Daily score</div><div class="value" id="dailyScore">0%</div></div>
+            <div class="box"><div class="label">Exercise total</div><div class="value" id="dailyExerciseTotal">0</div></div>
+            <div class="box"><div class="label">120+ min day</div><div class="value" id="qualifyingDay">No</div></div>
+            <div class="box"><div class="label">Prayer target</div><div class="value" id="prayerMet">No</div></div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Diet</span><span id="dietPctLabel">0%</span></div>
+            <div class="progress"><span id="dietPctBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Exercise</span><span id="exercisePctLabel">0%</span></div>
+            <div class="progress"><span id="exercisePctBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Prayer</span><span id="prayerPctLabel">0%</span></div>
+            <div class="progress"><span id="prayerPctBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Study</span><span id="studyPctLabel">0%</span></div>
+            <div class="progress"><span id="studyPctBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Sleep</span><span id="sleepPctLabel">0%</span></div>
+            <div class="progress"><span id="sleepPctBar"></span></div>
+          </div>
+
+          <div class="footer-note">
+            Scores are based on your settings. Exercise tracks both daily totals and weekly category goals.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-weekly">
+      <div class="grid two">
+        <div class="card">
+          <h2>Weekly Review</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">Entries this week</div><div class="value" id="weekEntries">0</div></div>
+            <div class="box"><div class="label">120+ min days</div><div class="value" id="weekQualifyingDays">0</div></div>
+            <div class="box"><div class="label">Target days</div><div class="value" id="weekTargetDays">0</div></div>
+            <div class="box"><div class="label">Avg daily score</div><div class="value" id="weekAvgScore">0%</div></div>
+          </div>
+
+          <div class="progress-wrap"><div class="progress-label"><span>Diet avg</span><span id="weekDietAvg">0%</span></div><div class="progress"><span id="weekDietBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Exercise avg</span><span id="weekExerciseAvg">0%</span></div><div class="progress"><span id="weekExerciseBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Prayer avg</span><span id="weekPrayerAvg">0%</span></div><div class="progress"><span id="weekPrayerBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Study avg</span><span id="weekStudyAvg">0%</span></div><div class="progress"><span id="weekStudyBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Sleep avg</span><span id="weekSleepAvg">0%</span></div><div class="progress"><span id="weekSleepBar"></span></div></div>
+        </div>
+
+        <div class="card">
+          <h2>Weekly Exercise Targets</h2>
+          <div class="progress-wrap"><div class="progress-label"><span>Cardio</span><span id="wkCardioTxt">0 / 0</span></div><div class="progress"><span id="wkCardioBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Walking</span><span id="wkWalkingTxt">0 / 0</span></div><div class="progress"><span id="wkWalkingBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Strength</span><span id="wkStrengthTxt">0 / 0</span></div><div class="progress"><span id="wkStrengthBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Yoga</span><span id="wkYogaTxt">0 / 0</span></div><div class="progress"><span id="wkYogaBar"></span></div></div>
+
+          <h3 style="margin-top:16px;">Prayer Frequency</h3>
+          <div id="weeklyPrayerPills"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-monthly">
+      <div class="grid two">
+        <div class="card">
+          <h2>Monthly Review</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">Entries this month</div><div class="value" id="monthEntries">0</div></div>
+            <div class="box"><div class="label">Avg score</div><div class="value" id="monthAvgScore">0%</div></div>
+            <div class="box"><div class="label">120+ min days</div><div class="value" id="monthQualDays">0</div></div>
+            <div class="box"><div class="label">Rosary days</div><div class="value" id="monthRosaryDays">0</div></div>
+          </div>
+
+          <div class="progress-wrap"><div class="progress-label"><span>Diet avg</span><span id="monthDietAvg">0%</span></div><div class="progress"><span id="monthDietBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Exercise avg</span><span id="monthExerciseAvg">0%</span></div><div class="progress"><span id="monthExerciseBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Prayer avg</span><span id="monthPrayerAvg">0%</span></div><div class="progress"><span id="monthPrayerBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Study avg</span><span id="monthStudyAvg">0%</span></div><div class="progress"><span id="monthStudyBar"></span></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Sleep avg</span><span id="monthSleepAvg">0%</span></div><div class="progress"><span id="monthSleepBar"></span></div></div>
+        </div>
+        <div class="card">
+          <h2>Monthly Summary</h2>
+          <div id="monthlyHighlights" class="stack muted"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-exercise">
+      <div class="grid two">
+        <div class="card">
+          <h2>Exercise Breakdown</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">This week cardio</div><div class="value" id="exWeekCardio">0</div></div>
+            <div class="box"><div class="label">This week walking</div><div class="value" id="exWeekWalking">0</div></div>
+            <div class="box"><div class="label">This week strength</div><div class="value" id="exWeekStrength">0</div></div>
+            <div class="box"><div class="label">This week yoga</div><div class="value" id="exWeekYoga">0</div></div>
+          </div>
+          <div class="footer-note">Cardio excludes walking. Daily qualifying status uses your total daily exercise threshold.</div>
+        </div>
+        <div class="card">
+          <h2>Last 7 Days</h2>
+          <div class="table-like" id="exerciseLast7"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-prayer">
+      <div class="grid two">
+        <div class="card">
+          <h2>Prayer Tracking</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">This week prayer min</div><div class="value" id="prayerWeekMin">0</div></div>
+            <div class="box"><div class="label">Rosary this week</div><div class="value" id="prayerWeekRosary">0</div></div>
+            <div class="box"><div class="label">Morning prayer</div><div class="value" id="prayerWeekMorning">0</div></div>
+            <div class="box"><div class="label">Examen</div><div class="value" id="prayerWeekExamen">0</div></div>
+          </div>
+          <div id="prayerPills"></div>
+        </div>
+        <div class="card">
+          <h2>Prayer Log (Last 7 Days)</h2>
+          <div class="table-like" id="prayerLast7"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-settings">
+      <div class="grid two">
+        <div class="card">
+          <h2>Targets & Settings</h2>
+          <h3>Exercise</h3>
+          <div class="row">
+            <div>
+              <label for="setDailyExerciseTarget">Daily exercise target (minutes)</label>
+              <input id="setDailyExerciseTarget" type="number" min="0" step="1" />
+            </div>
+            <div>
+              <label for="setWeeklyQualifyingDays">Qualifying days per week</label>
+              <input id="setWeeklyQualifyingDays" type="number" min="0" max="7" step="1" />
+            </div>
+          </div>
+          <div class="row four">
+            <div><label for="setCardioWeekly">Cardio weekly</label><input id="setCardioWeekly" type="number" min="0" step="1" /></div>
+            <div><label for="setWalkingWeekly">Walking weekly</label><input id="setWalkingWeekly" type="number" min="0" step="1" /></div>
+            <div><label for="setStrengthWeekly">Strength weekly</label><input id="setStrengthWeekly" type="number" min="0" step="1" /></div>
+            <div><label for="setYogaWeekly">Yoga weekly</label><input id="setYogaWeekly" type="number" min="0" step="1" /></div>
+          </div>
+
+          <h3>Prayer</h3>
+          <div class="row">
+            <div><label for="setPrayerMinutes">Prayer min target</label><input id="setPrayerMinutes" type="number" min="0" step="1" /></div>
+            <div><label for="setStudyMinutes">Study min target</label><input id="setStudyMinutes" type="number" min="0" step="1" /></div>
+          </div>
+          <div class="checkbox-row"><input id="setRequireMorningPrayer" type="checkbox" /><span>Require morning prayer</span></div>
+          <div class="checkbox-row"><input id="setRequireExamen" type="checkbox" /><span>Require examen</span></div>
+          <div class="checkbox-row"><input id="setRequireScripture" type="checkbox" /><span>Require scripture</span></div>
+          <div class="checkbox-row"><input id="setRequireRosary" type="checkbox" /><span>Require rosary</span></div>
+
+          <h3>Sleep & Diet</h3>
+          <div class="row">
+            <div><label for="setSleepMin">Sleep minimum hours</label><input id="setSleepMin" type="number" min="0" max="24" step="0.1" /></div>
+            <div><label for="setSleepIdeal">Sleep ideal hours</label><input id="setSleepIdeal" type="number" min="0" max="24" step="0.1" /></div>
+          </div>
+          <div class="checkbox-row"><input id="setDietRequirePlan" type="checkbox" /><span>Diet: require following plan</span></div>
+          <div class="checkbox-row"><input id="setDietRequireNoSugar" type="checkbox" /><span>Diet: require no sugar</span></div>
+          <div class="checkbox-row"><input id="setDietRequireNoLate" type="checkbox" /><span>Diet: require no late eating</span></div>
+
+          <button id="saveSettingsBtn">Save settings</button>
+          <button class="secondary" id="resetSettingsBtn">Reset defaults</button>
+          <div class="status" id="settingsStatus">Settings ready.</div>
+        </div>
+
+        <div class="card">
+          <h2>Backups</h2>
+          <button class="secondary" id="exportBtn">Export JSON backup</button>
+          <label for="importFile">Import JSON backup</label>
+          <input id="importFile" type="file" accept="application/json" />
+          <div class="footer-note">Export saves all local entries and settings. Import replaces local data on this device.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-sync">
+      <div class="grid two">
+        <div class="card">
+          <h2>Sync</h2>
+          <label for="firebaseConfigBox">Firebase web config JSON</label>
+          <textarea id="firebaseConfigBox" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+          <button id="saveFirebaseConfigBtn">Save Firebase config</button>
+
+          <label for="syncEmail">Email</label>
+          <input id="syncEmail" type="email" autocomplete="email" />
+          <label for="syncPassword">Password</label>
+          <input id="syncPassword" type="password" autocomplete="current-password" />
+
+          <div class="row">
+            <button id="createAccountBtn" class="secondary">Create sync account</button>
+            <button id="signInBtn">Sign in</button>
+          </div>
+          <button id="signOutBtn" class="ghost">Sign out</button>
+          <div class="row">
+            <button id="pushCloudBtn" class="good">Push local data to cloud</button>
+            <button id="pullCloudBtn" class="warn">Pull cloud data to this device</button>
+          </div>
+          <div class="status" id="syncStatus">Sync not configured.</div>
+        </div>
+
+        <div class="card">
+          <h2>Sync Notes</h2>
+          <div class="stack muted small">
+            <div>1. Paste your Firebase web config JSON and save it.</div>
+            <div>2. Create a sync account or sign in.</div>
+            <div>3. Push local data from one device.</div>
+            <div>4. Pull cloud data on another device after signing in.</div>
+          </div>
+          <div class="footer-note">Firestore rules should allow only authenticated users to read and write their own records under <code>users/{uid}/app/habitTracker</code>.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const DATA_KEY = "habitTrackerData_v2";
+    const SETTINGS_KEY = "habitTrackerSettings_v2";
+    const FIREBASE_CONFIG_KEY = "habitTrackerFirebaseConfig_v2";
+
+    const defaults = {
+      dailyExerciseTarget: 120,
+      weeklyQualifyingDays: 5,
+      cardioWeekly: 180,
+      walkingWeekly: 210,
+      strengthWeekly: 150,
+      yogaWeekly: 180,
+      prayerMinutes: 20,
+      requireMorningPrayer: true,
+      requireExamen: true,
+      requireScripture: false,
+      requireRosary: true,
+      studyMinutes: 45,
+      sleepMin: 7,
+      sleepIdeal: 7.5,
+      dietRequirePlan: true,
+      dietRequireNoSugar: true,
+      dietRequireNoLate: true
+    };
+
+    let firebaseApp = null;
+    let auth = null;
+    let db = null;
+    let authReady = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    function todayISO() {
+      const d = new Date();
+      const offset = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - offset * 60000);
+      return local.toISOString().slice(0, 10);
+    }
+
+    function safeParse(str, fallback) {
+      try { return JSON.parse(str); } catch { return fallback; }
+    }
+
+    function getEntries() {
+      return safeParse(localStorage.getItem(DATA_KEY), []);
+    }
+
+    function setEntries(entries) {
+      localStorage.setItem(DATA_KEY, JSON.stringify(entries));
+    }
+
+    function getSettings() {
+      return { ...defaults, ...safeParse(localStorage.getItem(SETTINGS_KEY), {}) };
+    }
+
+    function setSettings(settings) {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    function getSavedFirebaseConfig() {
+      return safeParse(localStorage.getItem(FIREBASE_CONFIG_KEY), null);
+    }
+
+    function setSavedFirebaseConfig(config) {
+      localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
+    }
+
+    function normNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function fmtPct(n) {
+      return `${Math.round(n)}%`;
+    }
+
+    function sortEntries(entries) {
+      return [...entries].sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    function upsertEntry(entry) {
+      const entries = getEntries().filter(e => e.date !== entry.date);
+      entries.push(entry);
+      setEntries(sortEntries(entries));
+    }
+
+    function getEntryByDate(date) {
+      return getEntries().find(e => e.date === date) || null;
+    }
+
+    function getWeekEntries(refDateStr = todayISO()) {
+      const ref = new Date(refDateStr + "T12:00:00");
+      const day = ref.getDay();
+      const diffToMonday = (day + 6) % 7;
+      const monday = new Date(ref);
+      monday.setDate(ref.getDate() - diffToMonday);
+      monday.setHours(0,0,0,0);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return getEntries().filter(e => {
+        const d = new Date(e.date + "T12:00:00");
+        return d >= monday && d <= sunday;
+      });
+    }
+
+    function getMonthEntries(refDateStr = todayISO()) {
+      const ref = new Date(refDateStr + "T12:00:00");
+      const y = ref.getFullYear();
+      const m = ref.getMonth();
+      return getEntries().filter(e => {
+        const d = new Date(e.date + "T12:00:00");
+        return d.getFullYear() === y && d.getMonth() === m;
+      });
+    }
+
+    function scoreEntry(entry, settings) {
+      const totalExercise = normNum(entry.cardioMin) + normNum(entry.walkingMin) + normNum(entry.strengthMin) + normNum(entry.yogaMin);
+      const exerciseScore = clamp((totalExercise / Math.max(1, settings.dailyExerciseTarget)) * 100, 0, 100);
+
+      const dietChecks = [
+        settings.dietRequirePlan ? !!entry.dietPlan : true,
+        settings.dietRequireNoSugar ? !!entry.noSugar : true,
+        settings.dietRequireNoLate ? !!entry.noLate : true
+      ];
+      const dietScore = Math.round((dietChecks.filter(Boolean).length / dietChecks.length) * 100);
+
+      const prayerParts = [];
+      prayerParts.push(clamp((normNum(entry.prayerMin) / Math.max(1, settings.prayerMinutes)) * 100, 0, 100));
+      if (settings.requireMorningPrayer) prayerParts.push(entry.morningPrayer ? 100 : 0);
+      if (settings.requireExamen) prayerParts.push(entry.examen ? 100 : 0);
+      if (settings.requireScripture) prayerParts.push(entry.scripture ? 100 : 0);
+      if (settings.requireRosary) prayerParts.push(entry.rosary ? 100 : 0);
+      const prayerScore = Math.round(prayerParts.reduce((a,b)=>a+b,0) / prayerParts.length);
+
+      let focusBonus = 0;
+      if (entry.studyFocus === "high") focusBonus = 15;
+      if (entry.studyFocus === "medium") focusBonus = 8;
+      const studyBase = clamp((normNum(entry.studyMin) / Math.max(1, settings.studyMinutes)) * 85, 0, 85);
+      const studyScore = Math.round(clamp(studyBase + focusBonus, 0, 100));
+
+      const sleepHours = normNum(entry.sleepHours);
+      const sleepDurationScore = sleepHours >= settings.sleepIdeal
+        ? 100
+        : sleepHours >= settings.sleepMin
+          ? 80 + ((sleepHours - settings.sleepMin) / Math.max(0.1, settings.sleepIdeal - settings.sleepMin)) * 20
+          : clamp((sleepHours / Math.max(0.1, settings.sleepMin)) * 80, 0, 80);
+      const quality = normNum(entry.sleepQuality);
+      const sleepScore = Math.round(clamp((sleepDurationScore * 0.8) + ((quality / 5) * 20), 0, 100));
+
+      const overall = Math.round((dietScore + exerciseScore + prayerScore + studyScore + sleepScore) / 5);
+
+      return {
+        totalExercise,
+        qualifyingDay: totalExercise >= settings.dailyExerciseTarget,
+        dietScore,
+        exerciseScore,
+        prayerScore,
+        studyScore,
+        sleepScore,
+        overall,
+        prayerMet: normNum(entry.prayerMin) >= settings.prayerMinutes
+      };
+    }
+
+    function collectEntryFromForm() {
+      return {
+        date: $("entryDate").value || todayISO(),
+        cardioMin: normNum($("cardioMin").value),
+        walkingMin: normNum($("walkingMin").value),
+        strengthMin: normNum($("strengthMin").value),
+        yogaMin: normNum($("yogaMin").value),
+        prayerMin: normNum($("prayerMin").value),
+        studyMin: normNum($("studyMin").value),
+        sleepHours: normNum($("sleepHours").value),
+        sleepQuality: normNum($("sleepQuality").value),
+        studyFocus: $("studyFocus").value,
+        dietPlan: $("dietPlan").checked,
+        noSugar: $("noSugar").checked,
+        noLate: $("noLate").checked,
+        morningPrayer: $("morningPrayer").checked,
+        examen: $("examen").checked,
+        scripture: $("scripture").checked,
+        rosary: $("rosary").checked,
+        notes: $("dailyNotes").value.trim()
+      };
+    }
+
+    function fillForm(entry) {
+      $("entryDate").value = entry?.date || todayISO();
+      $("cardioMin").value = entry?.cardioMin ?? "";
+      $("walkingMin").value = entry?.walkingMin ?? "";
+      $("strengthMin").value = entry?.strengthMin ?? "";
+      $("yogaMin").value = entry?.yogaMin ?? "";
+      $("prayerMin").value = entry?.prayerMin ?? "";
+      $("studyMin").value = entry?.studyMin ?? "";
+      $("sleepHours").value = entry?.sleepHours ?? "";
+      $("sleepQuality").value = entry?.sleepQuality ?? "";
+      $("studyFocus").value = entry?.studyFocus ?? "";
+      $("dietPlan").checked = !!entry?.dietPlan;
+      $("noSugar").checked = !!entry?.noSugar;
+      $("noLate").checked = !!entry?.noLate;
+      $("morningPrayer").checked = !!entry?.morningPrayer;
+      $("examen").checked = !!entry?.examen;
+      $("scripture").checked = !!entry?.scripture;
+      $("rosary").checked = !!entry?.rosary;
+      $("dailyNotes").value = entry?.notes || "";
+      updateDailySnapshot();
+    }
+
+    function clearForm() {
+      fillForm({ date: $("entryDate").value || todayISO() });
+      $("dailyStatus").textContent = "Form cleared.";
+    }
+
+    function updateProgress(idBase, pct) {
+      $(idBase + "Label").textContent = fmtPct(pct);
+      $(idBase + "Bar").style.width = `${clamp(pct, 0, 100)}%`;
+    }
+
+    function updateDailySnapshot() {
+      const settings = getSettings();
+      const entry = collectEntryFromForm();
+      const scored = scoreEntry(entry, settings);
+      $("dailyScore").textContent = fmtPct(scored.overall);
+      $("dailyExerciseTotal").textContent = String(scored.totalExercise);
+      $("qualifyingDay").textContent = scored.qualifyingDay ? "Yes" : "No";
+      $("prayerMet").textContent = scored.prayerMet ? "Yes" : "No";
+      updateProgress("dietPct", scored.dietScore);
+      updateProgress("exercisePct", scored.exerciseScore);
+      updateProgress("prayerPct", scored.prayerScore);
+      updateProgress("studyPct", scored.studyScore);
+      updateProgress("sleepPct", scored.sleepScore);
+    }
+
+    function renderDashboard() {
+      const settings = getSettings();
+      const today = $("entryDate").value || todayISO();
+      const entry = getEntryByDate(today) || collectEntryFromForm();
+      const scored = scoreEntry(entry, settings);
+      $("dashTodayScore").textContent = fmtPct(scored.overall);
+      $("dashTodayExercise").textContent = String(scored.totalExercise);
+      $("dashTodayQualifying").textContent = scored.qualifyingDay ? "Yes" : "No";
+      $("dashTodayRosary").textContent = entry.rosary ? "Yes" : "No";
+
+      const todayBars = [
+        ["dashDiet", scored.dietScore],
+        ["dashExercise", scored.exerciseScore],
+        ["dashPrayer", scored.prayerScore],
+        ["dashStudy", scored.studyScore],
+        ["dashSleep", scored.sleepScore]
+      ];
+      todayBars.forEach(([base, pct]) => {
+        $(base + "Label").textContent = fmtPct(pct);
+        $(base + "Bar").style.width = `${clamp(pct,0,100)}%`;
+      });
+
+      const week = getWeekEntries();
+      const scores = week.map(e => scoreEntry(e, settings));
+      const totals = {
+        cardio: week.reduce((a,e)=>a+normNum(e.cardioMin),0),
+        walking: week.reduce((a,e)=>a+normNum(e.walkingMin),0),
+        strength: week.reduce((a,e)=>a+normNum(e.strengthMin),0),
+        yoga: week.reduce((a,e)=>a+normNum(e.yogaMin),0)
+      };
+      const qualifyingDays = scores.filter(s => s.qualifyingDay).length;
+      $("dashWeekEntries").textContent = String(week.length);
+      $("dashWeekQualifying").textContent = String(qualifyingDays);
+      $("dashWeekTargetDays").textContent = String(settings.weeklyQualifyingDays);
+      $("dashWeekRosary").textContent = String(week.filter(e=>e.rosary).length);
+
+      const dashTargets = [
+        ["dashCardio", totals.cardio, settings.cardioWeekly],
+        ["dashWalking", totals.walking, settings.walkingWeekly],
+        ["dashStrength", totals.strength, settings.strengthWeekly],
+        ["dashYoga", totals.yoga, settings.yogaWeekly]
+      ];
+      dashTargets.forEach(([base,val,target]) => {
+        const pct = target > 0 ? clamp((val/target)*100,0,100) : 0;
+        $(base + "Txt").textContent = `${val} / ${target}`;
+        $(base + "Bar").style.width = `${pct}%`;
+      });
+
+      const avgScore = scores.length ? Math.round(scores.reduce((a,b)=>a+b.overall,0)/scores.length) : 0;
+      $("dashSummary").innerHTML = `
+        <strong>This week:</strong> ${qualifyingDays} of ${settings.weeklyQualifyingDays} qualifying exercise days completed.
+        Average score: ${fmtPct(avgScore)}. Prayer target met on ${scores.filter(s => s.prayerMet).length} day(s).
+      `;
+    }
+
+
+    function renderWeekly() {
+      const settings = getSettings();
+      const week = getWeekEntries();
+      const scores = week.map(e => scoreEntry(e, settings));
+      const avg = (key) => scores.length ? Math.round(scores.reduce((a,b)=>a+b[key],0)/scores.length) : 0;
+      const qualifyingDays = scores.filter(s => s.qualifyingDay).length;
+      $("weekEntries").textContent = String(week.length);
+      $("weekQualifyingDays").textContent = String(qualifyingDays);
+      $("weekTargetDays").textContent = String(settings.weeklyQualifyingDays);
+      $("weekAvgScore").textContent = fmtPct(avg("overall"));
+
+      const map = [
+        ["weekDiet", avg("dietScore")],
+        ["weekExercise", avg("exerciseScore")],
+        ["weekPrayer", avg("prayerScore")],
+        ["weekStudy", avg("studyScore")],
+        ["weekSleep", avg("sleepScore")]
+      ];
+      map.forEach(([base,p]) => {
+        $(base + "Avg").textContent = fmtPct(p);
+        $(base + "Bar").style.width = `${p}%`;
+      });
+
+      const totals = {
+        cardio: week.reduce((a,e)=>a+normNum(e.cardioMin),0),
+        walking: week.reduce((a,e)=>a+normNum(e.walkingMin),0),
+        strength: week.reduce((a,e)=>a+normNum(e.strengthMin),0),
+        yoga: week.reduce((a,e)=>a+normNum(e.yogaMin),0)
+      };
+      setWeeklyTargetBar("Cardio", totals.cardio, settings.cardioWeekly);
+      setWeeklyTargetBar("Walking", totals.walking, settings.walkingWeekly);
+      setWeeklyTargetBar("Strength", totals.strength, settings.strengthWeekly);
+      setWeeklyTargetBar("Yoga", totals.yoga, settings.yogaWeekly);
+
+      const prayerCounts = {
+        rosary: week.filter(e=>e.rosary).length,
+        morning: week.filter(e=>e.morningPrayer).length,
+        examen: week.filter(e=>e.examen).length,
+        scripture: week.filter(e=>e.scripture).length
+      };
+      $("weeklyPrayerPills").innerHTML = `
+        <span class="pill">Rosary: ${prayerCounts.rosary}</span>
+        <span class="pill">Morning prayer: ${prayerCounts.morning}</span>
+        <span class="pill">Examen: ${prayerCounts.examen}</span>
+        <span class="pill">Scripture: ${prayerCounts.scripture}</span>
+      `;
+    }
+
+    function setWeeklyTargetBar(name, value, target) {
+      const pct = target > 0 ? clamp((value / target) * 100, 0, 100) : 0;
+      const key = `wk${name}`;
+      $(key + "Txt").textContent = `${value} / ${target}`;
+      $(key + "Bar").style.width = `${pct}%`;
+    }
+
+    function renderMonthly() {
+      const settings = getSettings();
+      const month = getMonthEntries();
+      const scores = month.map(e => scoreEntry(e, settings));
+      const avg = (key) => scores.length ? Math.round(scores.reduce((a,b)=>a+b[key],0)/scores.length) : 0;
+      const qualifying = scores.filter(s=>s.qualifyingDay).length;
+      const rosaryDays = month.filter(e=>e.rosary).length;
+
+      $("monthEntries").textContent = String(month.length);
+      $("monthAvgScore").textContent = fmtPct(avg("overall"));
+      $("monthQualDays").textContent = String(qualifying);
+      $("monthRosaryDays").textContent = String(rosaryDays);
+
+      const map = [
+        ["monthDiet", avg("dietScore")],
+        ["monthExercise", avg("exerciseScore")],
+        ["monthPrayer", avg("prayerScore")],
+        ["monthStudy", avg("studyScore")],
+        ["monthSleep", avg("sleepScore")]
+      ];
+      map.forEach(([base,p]) => {
+        $(base + "Avg").textContent = fmtPct(p);
+        $(base + "Bar").style.width = `${p}%`;
+      });
+
+      let strongest = "—";
+      let weakest = "—";
+      if (scores.length) {
+        const vals = {
+          Diet: avg("dietScore"),
+          Exercise: avg("exerciseScore"),
+          Prayer: avg("prayerScore"),
+          Study: avg("studyScore"),
+          Sleep: avg("sleepScore")
+        };
+        strongest = Object.entries(vals).sort((a,b)=>b[1]-a[1])[0][0];
+        weakest = Object.entries(vals).sort((a,b)=>a[1]-b[1])[0][0];
+      }
+      $("monthlyHighlights").innerHTML = `
+        <div><strong>Strongest area:</strong> ${strongest}</div>
+        <div><strong>Weakest area:</strong> ${weakest}</div>
+        <div><strong>Qualifying exercise days:</strong> ${qualifying}</div>
+        <div><strong>Rosary days:</strong> ${rosaryDays}</div>
+      `;
+    }
+
+    function renderExercise() {
+      const week = getWeekEntries();
+      const cardio = week.reduce((a,e)=>a+normNum(e.cardioMin),0);
+      const walking = week.reduce((a,e)=>a+normNum(e.walkingMin),0);
+      const strength = week.reduce((a,e)=>a+normNum(e.strengthMin),0);
+      const yoga = week.reduce((a,e)=>a+normNum(e.yogaMin),0);
+      $("exWeekCardio").textContent = String(cardio);
+      $("exWeekWalking").textContent = String(walking);
+      $("exWeekStrength").textContent = String(strength);
+      $("exWeekYoga").textContent = String(yoga);
+
+      const last7 = sortEntries(getEntries()).slice(-7).reverse();
+      $("exerciseLast7").innerHTML = last7.length ? last7.map(e => {
+        const total = normNum(e.cardioMin)+normNum(e.walkingMin)+normNum(e.strengthMin)+normNum(e.yogaMin);
+        return `<div class="table-row"><div>${e.date}</div><div>${total} min</div><div>${e.cardioMin||0}/${e.walkingMin||0}/${e.strengthMin||0}/${e.yogaMin||0}</div></div>`;
+      }).join("") : `<div class="muted">No entries yet.</div>`;
+    }
+
+    function renderPrayer() {
+      const week = getWeekEntries();
+      $("prayerWeekMin").textContent = String(week.reduce((a,e)=>a+normNum(e.prayerMin),0));
+      $("prayerWeekRosary").textContent = String(week.filter(e=>e.rosary).length);
+      $("prayerWeekMorning").textContent = String(week.filter(e=>e.morningPrayer).length);
+      $("prayerWeekExamen").textContent = String(week.filter(e=>e.examen).length);
+      $("prayerPills").innerHTML = `
+        <span class="pill">Rosary: ${week.filter(e=>e.rosary).length}</span>
+        <span class="pill">Morning prayer: ${week.filter(e=>e.morningPrayer).length}</span>
+        <span class="pill">Examen: ${week.filter(e=>e.examen).length}</span>
+        <span class="pill">Scripture: ${week.filter(e=>e.scripture).length}</span>
+      `;
+      const last7 = sortEntries(getEntries()).slice(-7).reverse();
+      $("prayerLast7").innerHTML = last7.length ? last7.map(e => {
+        const items = [e.morningPrayer && "Morning", e.examen && "Examen", e.scripture && "Scripture", e.rosary && "Rosary"].filter(Boolean).join(", ") || "—";
+        return `<div class="table-row"><div>${e.date}</div><div>${e.prayerMin||0} min</div><div>${items}</div></div>`;
+      }).join("") : `<div class="muted">No entries yet.</div>`;
+    }
+
+    function loadSettingsIntoForm() {
+      const s = getSettings();
+      $("setDailyExerciseTarget").value = s.dailyExerciseTarget;
+      $("setWeeklyQualifyingDays").value = s.weeklyQualifyingDays;
+      $("setCardioWeekly").value = s.cardioWeekly;
+      $("setWalkingWeekly").value = s.walkingWeekly;
+      $("setStrengthWeekly").value = s.strengthWeekly;
+      $("setYogaWeekly").value = s.yogaWeekly;
+      $("setPrayerMinutes").value = s.prayerMinutes;
+      $("setStudyMinutes").value = s.studyMinutes;
+      $("setRequireMorningPrayer").checked = s.requireMorningPrayer;
+      $("setRequireExamen").checked = s.requireExamen;
+      $("setRequireScripture").checked = s.requireScripture;
+      $("setRequireRosary").checked = s.requireRosary;
+      $("setSleepMin").value = s.sleepMin;
+      $("setSleepIdeal").value = s.sleepIdeal;
+      $("setDietRequirePlan").checked = s.dietRequirePlan;
+      $("setDietRequireNoSugar").checked = s.dietRequireNoSugar;
+      $("setDietRequireNoLate").checked = s.dietRequireNoLate;
+    }
+
+    function saveSettingsFromForm() {
+      const s = {
+        dailyExerciseTarget: normNum($("setDailyExerciseTarget").value),
+        weeklyQualifyingDays: normNum($("setWeeklyQualifyingDays").value),
+        cardioWeekly: normNum($("setCardioWeekly").value),
+        walkingWeekly: normNum($("setWalkingWeekly").value),
+        strengthWeekly: normNum($("setStrengthWeekly").value),
+        yogaWeekly: normNum($("setYogaWeekly").value),
+        prayerMinutes: normNum($("setPrayerMinutes").value),
+        studyMinutes: normNum($("setStudyMinutes").value),
+        requireMorningPrayer: $("setRequireMorningPrayer").checked,
+        requireExamen: $("setRequireExamen").checked,
+        requireScripture: $("setRequireScripture").checked,
+        requireRosary: $("setRequireRosary").checked,
+        sleepMin: normNum($("setSleepMin").value),
+        sleepIdeal: normNum($("setSleepIdeal").value),
+        dietRequirePlan: $("setDietRequirePlan").checked,
+        dietRequireNoSugar: $("setDietRequireNoSugar").checked,
+        dietRequireNoLate: $("setDietRequireNoLate").checked
+      };
+      setSettings(s);
+      $("settingsStatus").textContent = "Settings saved.";
+      refreshAll();
+    }
+
+    function resetSettings() {
+      setSettings(defaults);
+      loadSettingsIntoForm();
+      $("settingsStatus").textContent = "Defaults restored.";
+      refreshAll();
+    }
+
+    function exportBackup() {
+      const payload = {
+        entries: getEntries(),
+        settings: getSettings(),
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `habit-tracker-backup-${todayISO()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importBackup(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const parsed = safeParse(reader.result, null);
+        if (!parsed || !Array.isArray(parsed.entries) || !parsed.settings) {
+          $("settingsStatus").textContent = "Import failed: invalid file.";
+          return;
+        }
+        setEntries(sortEntries(parsed.entries));
+        setSettings({ ...defaults, ...parsed.settings });
+        loadSettingsIntoForm();
+        fillForm(getEntryByDate($("entryDate").value) || { date: $("entryDate").value || todayISO() });
+        $("settingsStatus").textContent = "Import complete.";
+        refreshAll();
+      };
+      reader.readAsText(file);
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tabbtn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.toggle('active', tab.id === `tab-${tabName}`));
+    }
+
+    async function initFirebaseFromSavedConfig(showStatus = false) {
+      const config = getSavedFirebaseConfig();
+      if (!config) {
+        if (showStatus) $("syncStatus").textContent = "No Firebase config saved yet.";
+        return false;
+      }
+      try {
+        firebaseApp = getApps().length ? getApp() : initializeApp(config);
+        auth = getAuth(firebaseApp);
+        db = getFirestore(firebaseApp);
+        authReady = true;
+        onAuthStateChanged(auth, (user) => {
+          $("syncStatus").textContent = user ? `Signed in as ${user.email || 'user'}.` : "Firebase ready. Not signed in.";
+        });
+        if (showStatus) $("syncStatus").textContent = "Firebase initialized.";
+        return true;
+      } catch (err) {
+        $("syncStatus").textContent = `Firebase init failed: ${err.message}`;
+        return false;
+      }
+    }
+
+    async function saveFirebaseConfigFromBox() {
+      try {
+        const raw = $("firebaseConfigBox").value.trim();
+        const config = JSON.parse(raw);
+        setSavedFirebaseConfig(config);
+        await initFirebaseFromSavedConfig(true);
+      } catch (err) {
+        $("syncStatus").textContent = `Config save failed: ${err.message}`;
+      }
+    }
+
+    async function createSyncAccount() {
+      if (!authReady && !(await initFirebaseFromSavedConfig())) return;
+      try {
+        await createUserWithEmailAndPassword(auth, $("syncEmail").value.trim(), $("syncPassword").value);
+        $("syncStatus").textContent = "Sync account created.";
+      } catch (err) {
+        $("syncStatus").textContent = `Create account failed: ${err.message}`;
+      }
+    }
+
+    async function signInSync() {
+      if (!authReady && !(await initFirebaseFromSavedConfig())) return;
+      try {
+        await signInWithEmailAndPassword(auth, $("syncEmail").value.trim(), $("syncPassword").value);
+        $("syncStatus").textContent = "Signed in.";
+      } catch (err) {
+        $("syncStatus").textContent = `Sign in failed: ${err.message}`;
+      }
+    }
+
+    async function signOutSync() {
+      if (!authReady || !auth) return;
+      try {
+        await signOut(auth);
+        $("syncStatus").textContent = "Signed out.";
+      } catch (err) {
+        $("syncStatus").textContent = `Sign out failed: ${err.message}`;
+      }
+    }
+
+    async function pushCloud() {
+      if (!authReady && !(await initFirebaseFromSavedConfig())) return;
+      const user = auth.currentUser;
+      if (!user) {
+        $("syncStatus").textContent = "Push failed: not signed in.";
+        return;
+      }
+      try {
+        await setDoc(doc(db, "users", user.uid, "app", "habitTracker"), {
+          entries: getEntries(),
+          settings: getSettings(),
+          updatedAt: new Date().toISOString()
+        });
+        $("syncStatus").textContent = "Local data pushed to cloud.";
+      } catch (err) {
+        $("syncStatus").textContent = `Cloud write failed: ${err.message}`;
+      }
+    }
+
+    async function pullCloud() {
+      if (!authReady && !(await initFirebaseFromSavedConfig())) return;
+      const user = auth.currentUser;
+      if (!user) {
+        $("syncStatus").textContent = "Pull failed: not signed in.";
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid, "app", "habitTracker"));
+        if (!snap.exists()) {
+          $("syncStatus").textContent = "No cloud data found.";
+          return;
+        }
+        const data = snap.data();
+        if (Array.isArray(data.entries)) setEntries(sortEntries(data.entries));
+        if (data.settings) setSettings({ ...defaults, ...data.settings });
+        loadSettingsIntoForm();
+        fillForm(getEntryByDate($("entryDate").value) || { date: $("entryDate").value || todayISO() });
+        refreshAll();
+        $("syncStatus").textContent = "Cloud data pulled to this device.";
+      } catch (err) {
+        $("syncStatus").textContent = `Cloud read failed: ${err.message}`;
+      }
+    }
+
+    function refreshAll() {
+      updateDailySnapshot();
+      renderDashboard();
+      renderWeekly();
+      renderMonthly();
+      renderExercise();
+      renderPrayer();
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('.tabbtn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+      ["entryDate","cardioMin","walkingMin","strengthMin","yogaMin","prayerMin","studyMin","sleepHours","sleepQuality","studyFocus","dietPlan","noSugar","noLate","morningPrayer","examen","scripture","rosary","dailyNotes"]
+        .forEach(id => $(id).addEventListener('input', updateDailySnapshot));
+      ["dietPlan","noSugar","noLate","morningPrayer","examen","scripture","rosary","sleepQuality","studyFocus"].forEach(id => $(id).addEventListener('change', updateDailySnapshot));
+
+      $("saveDayBtn").addEventListener('click', () => {
+        const entry = collectEntryFromForm();
+        upsertEntry(entry);
+        $("dailyStatus").textContent = `Saved ${entry.date}.`;
+        refreshAll();
+      });
+
+      $("loadDayBtn").addEventListener('click', () => {
+        const date = $("entryDate").value || todayISO();
+        const entry = getEntryByDate(date);
+        if (entry) {
+          fillForm(entry);
+          $("dailyStatus").textContent = `Loaded ${date}.`;
+        } else {
+          fillForm({ date });
+          $("dailyStatus").textContent = `No saved entry for ${date}. Blank form loaded.`;
+        }
+      });
+
+      $("resetDayBtn").addEventListener('click', clearForm);
+      $("saveSettingsBtn").addEventListener('click', saveSettingsFromForm);
+      $("resetSettingsBtn").addEventListener('click', resetSettings);
+      $("exportBtn").addEventListener('click', exportBackup);
+      $("importFile").addEventListener('change', (e) => e.target.files?.[0] && importBackup(e.target.files[0]));
+
+      $("saveFirebaseConfigBtn").addEventListener('click', saveFirebaseConfigFromBox);
+      $("createAccountBtn").addEventListener('click', createSyncAccount);
+      $("signInBtn").addEventListener('click', signInSync);
+      $("signOutBtn").addEventListener('click', signOutSync);
+      $("pushCloudBtn").addEventListener('click', pushCloud);
+      $("pullCloudBtn").addEventListener('click', pullCloud);
+    }
+
+    function init() {
+      $("entryDate").value = todayISO();
+      loadSettingsIntoForm();
+      const savedConfig = getSavedFirebaseConfig();
+      if (savedConfig) $("firebaseConfigBox").value = JSON.stringify(savedConfig, null, 2);
+      const existing = getEntryByDate(todayISO());
+      fillForm(existing || { date: todayISO() });
+      bindEvents();
+      switchTab("dashboard");
+      refreshAll();
+      initFirebaseFromSavedConfig(false);
+    }
+
+    init();
+  </script>
+</body>
+</html>
