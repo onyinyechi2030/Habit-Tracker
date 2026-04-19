@@ -28,7 +28,7 @@
   <div class="hero">
     <div>
       <h1>Habit Tracker Pro</h1>
-      <p>Daily logging, goal review, recovery-aware sleep tracking, prayer detail, and optional cloud sync.</p>
+      <p>Daily logging, goal review, recovery-aware sleep tracking, richer prayer and study detail, and automatic cloud sync.</p>
     </div>
     <div class="hero-meta">
       <span class="pill" id="heroDatePill">Today</span>
@@ -191,6 +191,8 @@
       <div class="box"><div class="label">Morning prayer</div><div class="value" id="prayerMorningWeek">0</div></div>
       <div class="box"><div class="label">Examen</div><div class="value" id="prayerExamenWeek">0</div></div>
       <div class="box"><div class="label">Scripture</div><div class="value" id="prayerScriptureWeek">0</div></div>
+      <div class="box"><div class="label">Evening prayer</div><div class="value" id="prayerEveningWeek">0</div></div>
+      <div class="box"><div class="label">Meditation</div><div class="value" id="prayerMeditationWeek">0</div></div>
       <div class="box"><div class="label">Rosary month</div><div class="value" id="prayerRosaryMonth">0</div></div>
       <div class="box"><div class="label">Prayer target days</div><div class="value" id="prayerTargetDaysWeek">0</div></div>
     </div></div>
@@ -207,8 +209,10 @@
       <div class="row"><div><label>Target bedtime</label><input id="setBedtimeTarget" type="time" /></div><div><label>Target wake time</label><input id="setWakeTarget" type="time" /></div></div>
       <div class="check"><input id="setTrackWindDown" type="checkbox" /><span>Track wind-down completion</span></div>
       <div class="check"><input id="setRequireMorningPrayer" type="checkbox" /><span>Require morning prayer</span></div>
+      <div class="check"><input id="setRequireEveningPrayer" type="checkbox" /><span>Require evening prayer</span></div>
       <div class="check"><input id="setRequireExamen" type="checkbox" /><span>Require examen</span></div>
       <div class="check"><input id="setRequireScripture" type="checkbox" /><span>Require scripture</span></div>
+      <div class="check"><input id="setRequireMeditation" type="checkbox" /><span>Require meditation / contemplation</span></div>
       <div class="check"><input id="setRequireRosary" type="checkbox" /><span>Require rosary</span></div>
       <div class="check"><input id="setDietRequirePlan" type="checkbox" /><span>Diet requires plan</span></div>
       <div class="check"><input id="setDietRequireNoSugar" type="checkbox" /><span>Diet requires no sugar</span></div>
@@ -242,11 +246,10 @@
       <button type="button" id="createAccountBtn">Create sync account</button>
       <button type="button" class="secondary" id="signInBtn">Sign in</button>
       <button type="button" class="secondary" id="signOutBtn">Sign out</button>
-      <button type="button" class="good" id="pushCloudBtn">Push local data to cloud</button>
-      <button type="button" class="secondary" id="pullCloudBtn">Pull cloud data to this device</button>
+      <div class="helper">Manual push/pull is no longer needed. Saved days and settings sync automatically when you are signed in.</div>
       <div id="syncStatus" class="status"></div>
     </div>
-    <div class="card"><h2>Sync note</h2><p class="muted small">Use the same Firebase config and same sign-in credentials on each device. Firestore rules should allow access only to users/{uid}/app/habitTracker.</p></div>
+    <div class="card"><h2>Sync note</h2><p class="muted small">Automatic sync is on in this version. After you save your Firebase config and sign in on each device, saves and reloads sync automatically.</p></div>
   </div></section>
 </div>
 <script>
@@ -255,7 +258,7 @@
 const STORAGE_KEY='habitTracker.entries.v1';
 const SETTINGS_KEY='habitTracker.settings.v1';
 const FIREBASE_KEY='habitTracker.firebaseConfig.v1';
-const defaults={dailyExerciseTarget:120,weeklyQualifyingDays:5,cardioWeekly:180,walkingWeekly:150,strengthWeekly:120,yogaWeekly:150,prayerMinutes:20,studyMinutes:45,requireMorningPrayer:false,requireExamen:false,requireScripture:false,requireRosary:true,sleepMin:7,sleepIdeal:8,bedtimeTarget:'22:30',wakeTarget:'06:00',trackWindDown:true,dietRequirePlan:true,dietRequireNoSugar:false,dietRequireNoLate:false,dietRequireNoJunk:false};
+const defaults={dailyExerciseTarget:120,weeklyQualifyingDays:5,cardioWeekly:180,walkingWeekly:150,strengthWeekly:120,yogaWeekly:150,prayerMinutes:20,studyMinutes:45,requireMorningPrayer:false,requireEveningPrayer:false,requireExamen:false,requireScripture:false,requireMeditation:false,requireRosary:true,sleepMin:7,sleepIdeal:8,bedtimeTarget:'22:30',wakeTarget:'06:00',trackWindDown:true,dietRequirePlan:true,dietRequireNoSugar:false,dietRequireNoLate:false,dietRequireNoJunk:false};
 let firebaseApp=null, auth=null, db=null, authReady=false;
 let initializeApp,getApps,getApp,getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,getFirestore,doc,setDoc,getDoc;
 const $=id=>document.getElementById(id);
@@ -315,11 +318,18 @@ function collectEntry(){return{
   yogaMin:num($('yogaMin').value),
   prayerMin:num($('prayerMin').value),
   morningPrayer:$('morningPrayer').checked,
+  eveningPrayer:$('eveningPrayer').checked,
   examen:$('examen').checked,
   scripture:$('scripture').checked,
+  meditation:$('meditation').checked,
+  prayerNotes:$('prayerNotes').value||'',
   rosaryStatus:$('rosaryStatus').value,
   studyMin:num($('studyMin').value),
   studyFocus:$('studyFocus').value,
+  studyTopic:$('studyTopic').value||'',
+  studyType:$('studyType').value||'reading',
+  studyUnits:num($('studyUnits').value),
+  studyNotes:$('studyNotes').value||'',
   sleepHours:num($('sleepHours').value),
   sleepQuality:num($('sleepQuality').value),
   bedtime:$('bedtime').value||'',
@@ -340,11 +350,18 @@ function fillForm(e){
   $('yogaMin').value=e.yogaMin||'';
   $('prayerMin').value=e.prayerMin||'';
   $('morningPrayer').checked=!!e.morningPrayer;
+  $('eveningPrayer').checked=!!e.eveningPrayer;
   $('examen').checked=!!e.examen;
   $('scripture').checked=!!e.scripture;
+  $('meditation').checked=!!e.meditation;
+  $('prayerNotes').value=e.prayerNotes||'';
   $('rosaryStatus').value=e.rosaryStatus||(e.rosary?'complete':'none');
   $('studyMin').value=e.studyMin||'';
   $('studyFocus').value=e.studyFocus||'low';
+  $('studyTopic').value=e.studyTopic||'';
+  $('studyType').value=e.studyType||'reading';
+  $('studyUnits').value=e.studyUnits||'';
+  $('studyNotes').value=e.studyNotes||'';
   $('sleepHours').value=e.sleepHours||'';
   $('sleepQuality').value=String(e.sleepQuality||3);
   $('bedtime').value=e.bedtime||'';
@@ -370,8 +387,10 @@ function loadSettingsIntoForm(){
   $('setPrayerMinutes').value=s.prayerMinutes;
   $('setStudyMinutes').value=s.studyMinutes;
   $('setRequireMorningPrayer').checked=s.requireMorningPrayer;
+  $('setRequireEveningPrayer').checked=!!s.requireEveningPrayer;
   $('setRequireExamen').checked=s.requireExamen;
   $('setRequireScripture').checked=s.requireScripture;
+  $('setRequireMeditation').checked=!!s.requireMeditation;
   $('setRequireRosary').checked=s.requireRosary;
   $('setSleepMin').value=s.sleepMin;
   $('setSleepIdeal').value=s.sleepIdeal;
@@ -394,8 +413,10 @@ function saveSettingsFromForm(){
     prayerMinutes:num($('setPrayerMinutes').value),
     studyMinutes:num($('setStudyMinutes').value),
     requireMorningPrayer:$('setRequireMorningPrayer').checked,
+    requireEveningPrayer:$('setRequireEveningPrayer').checked,
     requireExamen:$('setRequireExamen').checked,
     requireScripture:$('setRequireScripture').checked,
+    requireMeditation:$('setRequireMeditation').checked,
     requireRosary:$('setRequireRosary').checked,
     sleepMin:num($('setSleepMin').value),
     sleepIdeal:num($('setSleepIdeal').value),
@@ -414,8 +435,10 @@ function rosaryLabel(status){return status==='complete'?'Complete':status==='par
 function prayerTargetMet(e,s){
   return num(e.prayerMin)>=s.prayerMinutes &&
     (!s.requireMorningPrayer || e.morningPrayer) &&
+    (!s.requireEveningPrayer || e.eveningPrayer) &&
     (!s.requireExamen || e.examen) &&
     (!s.requireScripture || e.scripture) &&
+    (!s.requireMeditation || e.meditation) &&
     (!s.requireRosary || e.rosaryStatus==='complete');
 }
 
@@ -432,8 +455,8 @@ function dietScore(e,s){
 function categoryScores(e,s){
   const exTotal=num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin);
   const exercise=Math.round(pct(exTotal,s.dailyExerciseTarget||1));
-  let prayerChecks=1 + (s.requireMorningPrayer?1:0) + (s.requireExamen?1:0) + (s.requireScripture?1:0) + (s.requireRosary?1:0);
-  let prayerGot=(num(e.prayerMin)>=s.prayerMinutes?1:0) + ((s.requireMorningPrayer&&e.morningPrayer)?1:0) + ((s.requireExamen&&e.examen)?1:0) + ((s.requireScripture&&e.scripture)?1:0) + ((s.requireRosary&&e.rosaryStatus==='complete')?1:0);
+  let prayerChecks=1 + (s.requireMorningPrayer?1:0) + (s.requireEveningPrayer?1:0) + (s.requireExamen?1:0) + (s.requireScripture?1:0) + (s.requireMeditation?1:0) + (s.requireRosary?1:0);
+  let prayerGot=(num(e.prayerMin)>=s.prayerMinutes?1:0) + ((s.requireMorningPrayer&&e.morningPrayer)?1:0) + ((s.requireEveningPrayer&&e.eveningPrayer)?1:0) + ((s.requireExamen&&e.examen)?1:0) + ((s.requireScripture&&e.scripture)?1:0) + ((s.requireMeditation&&e.meditation)?1:0) + ((s.requireRosary&&e.rosaryStatus==='complete')?1:0);
   const prayer=Math.round((prayerGot/prayerChecks)*100);
   const study=Math.round(pct(num(e.studyMin),s.studyMinutes||1));
   const sleepBase=Math.round(pct(num(e.sleepHours),s.sleepMin||1));
@@ -453,9 +476,13 @@ function updateDailySnapshot(){
   $('snapSleep').textContent=String(e.sleepHours);
   $('snapPills').innerHTML=[`Overall ${scores.overall}%`,`Exercise ${scores.exercise}%`,`Prayer ${scores.prayer}%`,`Study ${scores.study}%`,`Sleep ${scores.sleep}%`,`Diet ${scores.diet}%`,
     e.morningPrayer&&'Morning prayer',
+    e.eveningPrayer&&'Evening prayer',
     e.examen&&'Examen',
     e.scripture&&'Scripture',
+    e.meditation&&'Meditation/contemplation',
     e.rosaryStatus!=='none'&&`Rosary: ${rosaryLabel(e.rosaryStatus)}`,
+    e.studyTopic&&`Study: ${e.studyTopic}`,
+    e.studyUnits&&`Units: ${e.studyUnits}`,
     e.windDown&&'Wind-down',
     e.dietPlan&&'Diet plan',
     e.noSugar&&'No sugar',
@@ -512,7 +539,8 @@ function renderWeekly(){
     const total=num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin);
     const ros=rosaryLabel(e.rosaryStatus||(e.rosary?'complete':'none'));
     const sc=categoryScores(e,s);
-    return `<div class="trow"><div>${e.date}</div><div>${total} min · ${sc.overall}%</div><div>${ros}${e.sleepHours?` · ${e.sleepHours}h`:''}</div></div>`;
+    const studyInfo=e.studyTopic?` · ${e.studyTopic}`:'';
+    return `<div class="trow"><div>${e.date}</div><div>${total} min · ${sc.overall}%${studyInfo}</div><div>${ros}${e.sleepHours?` · ${e.sleepHours}h`:''}</div></div>`;
   }).join(''):'<div class="muted">No entries yet.</div>';
 }
 function renderMonthly(){
@@ -522,6 +550,8 @@ function renderMonthly(){
     <span class="pill">Rosary complete: ${m.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='complete').length}</span>
     <span class="pill">Rosary partial: ${m.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='partial').length}</span>
     <span class="pill">Morning prayer days: ${m.filter(e=>e.morningPrayer).length}</span>
+    <span class="pill">Evening prayer days: ${m.filter(e=>e.eveningPrayer).length}</span>
+    <span class="pill">Meditation days: ${m.filter(e=>e.meditation).length}</span>
     <span class="pill">Study target days: ${m.filter(e=>num(e.studyMin)>=s.studyMinutes).length}</span>
     <span class="pill">Sleep target nights: ${m.filter(e=>num(e.sleepHours)>=s.sleepMin).length}</span>
     <span class="pill">No junk/snacks days: ${m.filter(e=>e.noJunk).length}</span>
@@ -544,37 +574,41 @@ function renderPrayer(){
   $('prayerMorningWeek').textContent=String(w.filter(e=>e.morningPrayer).length);
   $('prayerExamenWeek').textContent=String(w.filter(e=>e.examen).length);
   $('prayerScriptureWeek').textContent=String(w.filter(e=>e.scripture).length);
+  $('prayerEveningWeek').textContent=String(w.filter(e=>e.eveningPrayer).length);
+  $('prayerMeditationWeek').textContent=String(w.filter(e=>e.meditation).length);
   $('prayerRosaryMonth').textContent=String(m.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='complete').length);
   $('prayerTargetDaysWeek').textContent=String(w.filter(e=>prayerTargetMet(e,s)).length);
   $('prayerRows').innerHTML=w.length?w.map(e=>{
-    const items=[e.morningPrayer&&'Morning',e.examen&&'Examen',e.scripture&&'Scripture',`Rosary: ${rosaryLabel(e.rosaryStatus||(e.rosary?'complete':'none'))}`].filter(Boolean).join(', ')||'—';
+    const items=[e.morningPrayer&&'Morning',e.eveningPrayer&&'Evening',e.examen&&'Examen',e.scripture&&'Scripture',e.meditation&&'Meditation',`Rosary: ${rosaryLabel(e.rosaryStatus||(e.rosary?'complete':'none'))}`].filter(Boolean).join(', ')||'—';
     return `<div class="trow"><div>${e.date}</div><div>${e.prayerMin||0} min</div><div>${items}</div></div>`;
   }).join(''):'<div class="muted">No entries yet.</div>';
 }
 
 function refreshAll(){updateDailySnapshot();renderDashboard();renderWeekly();renderMonthly();renderExercise();renderPrayer();}
 function exportBackup(){const blob=new Blob([JSON.stringify({entries:getEntries(),settings:getSettings()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='habit-tracker-backup.json';a.click();URL.revokeObjectURL(a.href);$('backupStatus').textContent='Backup exported.';}
-function importBackup(file){const r=new FileReader();r.onload=()=>{try{const data=JSON.parse(r.result);if(Array.isArray(data.entries))setEntries(sortEntries(data.entries));if(data.settings)setSettings({...defaults,...data.settings});loadSettingsIntoForm();fillForm(getEntryByDate($('entryDate').value)||{date:$('entryDate').value||todayISO()});refreshAll();$('backupStatus').textContent='Backup imported.';}catch(err){$('backupStatus').textContent='Import failed: '+err.message;}};r.readAsText(file);}
+function importBackup(file){const r=new FileReader();r.onload=async ()=>{try{const data=JSON.parse(r.result);if(Array.isArray(data.entries))setEntries(sortEntries(data.entries));if(data.settings)setSettings({...defaults,...data.settings});loadSettingsIntoForm();fillForm(getEntryByDate($('entryDate').value)||{date:$('entryDate').value||todayISO()});refreshAll();$('backupStatus').textContent='Backup imported.';await autoSyncSave('Backup imported locally.');}catch(err){$('backupStatus').textContent='Import failed: '+err.message;}};r.readAsText(file);}
 async function ensureFirebase(){if(initializeApp&&getAuth&&getFirestore)return true;try{const appMod=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');const authMod=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');const dbMod=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');({initializeApp,getApps,getApp}=appMod);({getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut}=authMod);({getFirestore,doc,setDoc,getDoc}=dbMod);return true;}catch(err){$('syncStatus').textContent='Firebase SDK load failed: '+err.message;return false;}}
-async function initFirebase(show){if(!(await ensureFirebase()))return false;const config=getConfig();if(!config){if(show)$('syncStatus').textContent='No Firebase config saved yet.';return false;}try{firebaseApp=getApps().length?getApp():initializeApp(config);auth=getAuth(firebaseApp);db=getFirestore(firebaseApp);authReady=true;onAuthStateChanged(auth,u=>{$('syncStatus').textContent=u?`Signed in as ${u.email||'user'}.`:'Firebase ready. Not signed in.';});if(show)$('syncStatus').textContent='Firebase initialized.';return true;}catch(err){$('syncStatus').textContent='Firebase init failed: '+err.message;return false;}}
+async function initFirebase(show){if(!(await ensureFirebase()))return false;const config=getConfig();if(!config){if(show)$('syncStatus').textContent='No Firebase config saved yet.';return false;}try{firebaseApp=getApps().length?getApp():initializeApp(config);auth=getAuth(firebaseApp);db=getFirestore(firebaseApp);authReady=true;onAuthStateChanged(auth,async u=>{if(u){$('syncStatus').textContent=`Signed in as ${u.email||'user'}. Loading latest cloud data...`;await pullCloud(false);$('syncStatus').textContent=`Signed in as ${u.email||'user'}. Auto-sync active.`;}else{$('syncStatus').textContent='Firebase ready. Not signed in.';}});if(show)$('syncStatus').textContent='Firebase initialized.';return true;}catch(err){$('syncStatus').textContent='Firebase init failed: '+err.message;return false;}}
 async function saveFirebaseConfig(){try{const config=JSON.parse($('firebaseConfigBox').value.trim());setConfig(config);await initFirebase(true);}catch(err){$('syncStatus').textContent='Config save failed: '+err.message;}}
-async function createSyncAccount(){if(!authReady && !(await initFirebase(false)))return;try{await createUserWithEmailAndPassword(auth,$('syncEmail').value.trim(),$('syncPassword').value);$('syncStatus').textContent='Sync account created.';}catch(err){$('syncStatus').textContent='Create account failed: '+err.message;}}
-async function signInSync(){if(!authReady && !(await initFirebase(false)))return;try{await signInWithEmailAndPassword(auth,$('syncEmail').value.trim(),$('syncPassword').value);$('syncStatus').textContent='Signed in.';}catch(err){$('syncStatus').textContent='Sign in failed: '+err.message;}}
+async function createSyncAccount(){if(!authReady && !(await initFirebase(false)))return;try{await createUserWithEmailAndPassword(auth,$('syncEmail').value.trim(),$('syncPassword').value);$('syncStatus').textContent='Sync account created. Auto-sync active.';await pushCloud(false);}catch(err){$('syncStatus').textContent='Create account failed: '+err.message;}}
+async function signInSync(){if(!authReady && !(await initFirebase(false)))return;try{await signInWithEmailAndPassword(auth,$('syncEmail').value.trim(),$('syncPassword').value);await pullCloud(false);$('syncStatus').textContent='Signed in. Auto-sync active.';}catch(err){$('syncStatus').textContent='Sign in failed: '+err.message;}}
 async function signOutSync(){if(!authReady||!auth)return;try{await signOut(auth);$('syncStatus').textContent='Signed out.';}catch(err){$('syncStatus').textContent='Sign out failed: '+err.message;}}
-async function pushCloud(){if(!authReady && !(await initFirebase(false)))return;const user=auth.currentUser;if(!user){$('syncStatus').textContent='Push failed: not signed in.';return;}try{await setDoc(doc(db,'users',user.uid,'app','habitTracker'),{entries:getEntries(),settings:getSettings(),updatedAt:new Date().toISOString()});$('syncStatus').textContent='Local data pushed to cloud.';}catch(err){$('syncStatus').textContent='Cloud write failed: '+err.message;}}
-async function pullCloud(){if(!authReady && !(await initFirebase(false)))return;const user=auth.currentUser;if(!user){$('syncStatus').textContent='Pull failed: not signed in.';return;}try{const snap=await getDoc(doc(db,'users',user.uid,'app','habitTracker'));if(!snap.exists()){$('syncStatus').textContent='No cloud data found.';return;}const data=snap.data();if(Array.isArray(data.entries))setEntries(sortEntries(data.entries));if(data.settings)setSettings({...defaults,...data.settings});loadSettingsIntoForm();fillForm(getEntryByDate($('entryDate').value)||{date:$('entryDate').value||todayISO()});refreshAll();$('syncStatus').textContent='Cloud data pulled to this device.';}catch(err){$('syncStatus').textContent='Cloud read failed: '+err.message;}}
+async function pushCloud(showSuccess=true){if(!authReady && !(await initFirebase(false)))return false;const user=auth.currentUser;if(!user){$('syncStatus').textContent='Auto-sync paused: not signed in.';return false;}try{await setDoc(doc(db,'users',user.uid,'app','habitTracker'),{entries:getEntries(),settings:getSettings(),updatedAt:new Date().toISOString()});if(showSuccess)$('syncStatus').textContent='Cloud sync complete.';return true;}catch(err){$('syncStatus').textContent='Cloud write failed: '+err.message;return false;}}
+async function pullCloud(showSuccess=true){if(!authReady && !(await initFirebase(false)))return false;const user=auth.currentUser;if(!user){$('syncStatus').textContent='Auto-sync paused: not signed in.';return false;}try{const snap=await getDoc(doc(db,'users',user.uid,'app','habitTracker'));if(!snap.exists()){$('syncStatus').textContent='Signed in. No cloud data yet.';return true;}const data=snap.data();if(Array.isArray(data.entries))setEntries(sortEntries(data.entries));if(data.settings)setSettings({...defaults,...data.settings});loadSettingsIntoForm();fillForm(getEntryByDate($('entryDate').value)||{date:$('entryDate').value||todayISO()});refreshAll();if(showSuccess)$('syncStatus').textContent='Latest cloud data loaded.';return true;}catch(err){$('syncStatus').textContent='Cloud read failed: '+err.message;return false;}}
+async function autoSyncSave(note='Changes saved locally.'){$('syncStatus').textContent=note;await pushCloud(false);if(auth&&auth.currentUser){$('syncStatus').textContent='Saved locally and synced to cloud.';}}
 function bind(){
-  ['cardioMin','walkingMin','strengthMin','yogaMin','prayerMin','studyMin','sleepHours','sleepQuality','studyFocus','dietPlan','noSugar','noLate','noJunk','morningPrayer','examen','scripture','rosaryStatus','bedtime','wakeTime','windDown','dailyNotes','sleepNotes'].forEach(id=>$(id).addEventListener('input',updateDailySnapshot));
+  ['cardioMin','walkingMin','strengthMin','yogaMin','prayerMin','studyMin','sleepHours','sleepQuality','studyFocus','studyTopic','studyType','studyUnits','studyNotes','dietPlan','noSugar','noLate','noJunk','morningPrayer','eveningPrayer','examen','scripture','meditation','prayerNotes','rosaryStatus','bedtime','wakeTime','windDown','dailyNotes','sleepNotes'].forEach(id=>$(id).addEventListener('input',updateDailySnapshot));
   $('entryDate').addEventListener('change',loadEntryForSelectedDate);
-  $('saveDayBtn').addEventListener('click',()=>{
+  $('saveDayBtn').addEventListener('click',async ()=>{
     const saved=upsertEntry(collectEntry());
     fillForm(saved);
     $('dailyStatus').textContent=`Saved ${saved.date}.`;
     refreshAll();
+    await autoSyncSave(`Saved ${saved.date} locally.`);
   });
   $('loadDayBtn').addEventListener('click',loadEntryForSelectedDate);
   $('resetDayBtn').addEventListener('click',clearForm);
-  $('saveSettingsBtn').addEventListener('click',saveSettingsFromForm);
+  $('saveSettingsBtn').addEventListener('click',async ()=>{saveSettingsFromForm();await autoSyncSave('Settings saved locally.');});
   $('resetSettingsBtn').addEventListener('click',resetSettings);
   $('exportBtn').addEventListener('click',exportBackup);
   $('importFile').addEventListener('change',e=>e.target.files&&e.target.files[0]&&importBackup(e.target.files[0]));
@@ -582,8 +616,7 @@ function bind(){
   $('createAccountBtn').addEventListener('click',createSyncAccount);
   $('signInBtn').addEventListener('click',signInSync);
   $('signOutBtn').addEventListener('click',signOutSync);
-  $('pushCloudBtn').addEventListener('click',pushCloud);
-  $('pullCloudBtn').addEventListener('click',pullCloud);
+
 }
 function init(){window.switchTab=switchTab;$('entryDate').value=todayISO();loadSettingsIntoForm();const cfg=getConfig();if(cfg)$('firebaseConfigBox').value=JSON.stringify(cfg,null,2);fillForm(getEntryByDate(todayISO())||{date:todayISO()});bind();switchTab('dashboard');refreshAll();initFirebase(false);} 
 window.addEventListener('DOMContentLoaded',init);
