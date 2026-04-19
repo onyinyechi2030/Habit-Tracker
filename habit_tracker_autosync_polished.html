@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Habit Tracker Pro</title>
+<style>
+  :root{--bg:#0f1115;--panel:#171a21;--panel2:#1f2633;--text:#eef2f7;--muted:#aab3c2;--accent:#7aa2ff;--accent2:#93b4ff;--border:#2b3240;--good:#9ed6b3;--warn:#ffd27d;--danger:#ff9f9f;--shadow:0 18px 40px rgba(0,0,0,.22)}
+  *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(circle at top,#182033 0,#0d1015 38%,#111622 100%);color:var(--text)}
+  .app{max-width:1180px;margin:0 auto;padding:20px 14px 96px}.hero{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin-bottom:8px}.hero h1{margin:0 0 6px;font-size:2rem;letter-spacing:-.03em}.hero p{margin:0;color:var(--muted)} .hero-meta{display:flex;gap:10px;flex-wrap:wrap}
+  .tabbar{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;padding:12px 0 14px;background:rgba(13,16,21,.9);backdrop-filter:blur(10px)}
+  .tabbtn{border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:999px;padding:10px 8px;font-size:.85rem;cursor:pointer}.tabbtn.active{background:var(--accent);color:#09111f;font-weight:700;border-color:transparent}
+  .tab{display:none}.tab.active{display:block}.grid{display:grid;gap:14px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:var(--shadow)}.card h2,.card h3{margin:0 0 10px}.muted{color:var(--muted)} .small{font-size:.9rem}
+  label{display:block;margin:9px 0 6px;color:var(--muted);font-size:.9rem} input,textarea,select{width:100%;background:#0f141d;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:11px 12px;font:inherit}
+  textarea{min-height:100px;resize:vertical} input[type=checkbox]{width:auto;margin-right:8px;accent-color:var(--accent)} .check{display:flex;align-items:center;padding:6px 0}
+  .row{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}.row.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+  button{border:0;border-radius:12px;padding:11px 14px;background:linear-gradient(180deg,var(--accent2),var(--accent));color:#08101f;font-weight:700;cursor:pointer;margin-top:10px;transition:transform .12s ease,opacity .12s ease} button:hover{transform:translateY(-1px)} button:active{transform:translateY(0)} button.secondary{background:#273349;color:var(--text);border:1px solid var(--border)} button.good{background:var(--good)} button.warn{background:var(--warn);color:#231500}
+  .kpi{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.box{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px}.label{color:var(--muted);font-size:.82rem}.value{font-size:1.5rem;font-weight:800;margin-top:4px}
+  .progress-label{display:flex;justify-content:space-between;color:var(--muted);font-size:.88rem;margin:8px 0 5px}.progress{height:10px;background:#0d121b;border:1px solid var(--border);border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--good))}
+  .table{display:grid;gap:8px}.trow{display:grid;gap:10px;grid-template-columns:1.2fr .8fr .8fr;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.02)}
+  .status{margin-top:10px;padding:10px 12px;border-radius:12px;background:#111827;border:1px solid var(--border);color:var(--muted);min-height:44px}.pill{display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid var(--border);font-size:.8rem;margin:0 6px 6px 0}.section-note{margin:-2px 0 12px;color:var(--muted);font-size:.92rem}.score{font-size:2.2rem;font-weight:800;letter-spacing:-.04em}.mini-score{font-size:1.15rem;font-weight:700}.score.good{color:var(--good)}.score.warn{color:var(--warn)}.score.bad{color:var(--danger)} .stack{display:flex;flex-direction:column;gap:10px}.button-row{display:flex;gap:10px;flex-wrap:wrap}.button-row button{margin-top:0}.helper{font-size:.82rem;color:var(--muted);margin-top:4px}.subgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.divider{height:1px;background:var(--border);margin:14px 0}.compact .box{padding:12px}.overview-card{padding:18px}.overview-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:12px}.overview-top .muted{max-width:44ch}.sticky-actions{position:sticky;bottom:10px;display:flex;gap:10px;flex-wrap:wrap;padding-top:10px;background:linear-gradient(180deg,rgba(23,26,33,0),rgba(23,26,33,.95) 40%)}
+  @media(max-width:900px){.hero{flex-direction:column;align-items:flex-start}.grid.two,.grid.three,.row,.row.four{grid-template-columns:1fr}.tabbar{grid-template-columns:repeat(3,minmax(0,1fr))}.overview-top{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hero">
+    <div>
+      <h1>Habit Tracker Pro</h1>
+      <p>Daily logging, goal review, recovery-aware sleep tracking, richer prayer and study detail, and automatic cloud sync.</p>
+    </div>
+    <div class="hero-meta">
+      <span class="pill" id="heroDatePill">Today</span>
+      <span class="pill" id="heroEntriesPill">0 saved days</span>
+      <span class="pill" id="heroWeeklyPill">0 / 5 exercise days</span>
+    </div>
+  </div>
+  <div class="tabbar">
+    <button type="button" class="tabbtn active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button type="button" class="tabbtn" onclick="switchTab('daily')">Daily</button>
+    <button type="button" class="tabbtn" onclick="switchTab('weekly')">Weekly</button>
+    <button type="button" class="tabbtn" onclick="switchTab('monthly')">Monthly</button>
+    <button type="button" class="tabbtn" onclick="switchTab('exercise')">Exercise</button>
+    <button type="button" class="tabbtn" onclick="switchTab('prayer')">Prayer</button>
+    <button type="button" class="tabbtn" onclick="switchTab('settings')">Settings</button>
+    <button type="button" class="tabbtn" onclick="switchTab('sync')">Sync</button>
+  </div>
+
+  <section id="tab-dashboard" class="tab active">
+    <div class="grid two">
+      <div class="card overview-card">
+        <div class="overview-top">
+          <div>
+            <h2>Dashboard</h2>
+            <p class="section-note">Your home screen: today’s standing, what still needs attention, and how the week is shaping up.</p>
+          </div>
+          <div>
+            <div class="label">Today score</div>
+            <div class="score" id="dashOverallScore">0%</div>
+          </div>
+        </div>
+        <div class="subgrid compact">
+          <div class="box"><div class="label">Exercise today</div><div class="value" id="dashExerciseToday">0</div><div class="helper" id="dashExerciseHelper">0 of 120 min target</div></div>
+          <div class="box"><div class="label">Prayer</div><div class="value" id="dashPrayer">0</div><div class="helper" id="dashPrayerHelper">0 min</div></div>
+          <div class="box"><div class="label">Rosary</div><div class="value" id="dashRosary">—</div><div class="helper" id="dashRosaryHelper">Status today</div></div>
+          <div class="box"><div class="label">Study</div><div class="value" id="dashStudy">0</div><div class="helper" id="dashStudyHelper">0 of target</div></div>
+          <div class="box"><div class="label">Sleep</div><div class="value" id="dashSleep">0</div><div class="helper" id="dashSleepHelper">Hours last night</div></div>
+          <div class="box"><div class="label">Diet</div><div class="value" id="dashDietScore">0%</div><div class="helper" id="dashDietHelper">Daily adherence</div></div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="label">Today by category</div>
+          <div id="dashCategoryPills"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Weekly snapshot</h2>
+        <p class="section-note">Progress toward exercise targets and category consistency over the last 7 days.</p>
+        <div class="progress-label"><span>120+ minute days</span><span id="weekQualifyingText">0 / 5</span></div><div class="progress"><span id="weekQualifyingBar"></span></div>
+        <div class="progress-label"><span>Cardio</span><span id="dashCardioText">0 / 0</span></div><div class="progress"><span id="dashCardioBar"></span></div>
+        <div class="progress-label"><span>Walking</span><span id="dashWalkingText">0 / 0</span></div><div class="progress"><span id="dashWalkingBar"></span></div>
+        <div class="progress-label"><span>Strength</span><span id="dashStrengthText">0 / 0</span></div><div class="progress"><span id="dashStrengthBar"></span></div>
+        <div class="progress-label"><span>Yoga</span><span id="dashYogaText">0 / 0</span></div><div class="progress"><span id="dashYogaBar"></span></div>
+        <div class="divider"></div>
+        <div class="subgrid compact">
+          <div class="box"><div class="label">Prayer target days</div><div class="mini-score" id="dashPrayerDays">0</div></div>
+          <div class="box"><div class="label">Rosary complete</div><div class="mini-score" id="dashRosaryDays">0</div></div>
+          <div class="box"><div class="label">Avg sleep</div><div class="mini-score" id="dashSleepAvg">0</div></div>
+          <div class="box"><div class="label">Diet strong days</div><div class="mini-score" id="dashDietDays">0</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-daily" class="tab">
+    <div class="grid two">
+      <div class="card">
+        <h2>Daily entry</h2><p class="section-note">Log today or any selected date. The dashboard and reviews update as soon as you save.</p>
+        <label>Date</label><input id="entryDate" type="date" />
+        <h3>Exercise</h3>
+        <div class="row four">
+          <div><label>Cardio</label><input id="cardioMin" type="number" min="0" /></div>
+          <div><label>Walking</label><input id="walkingMin" type="number" min="0" /></div>
+          <div><label>Strength</label><input id="strengthMin" type="number" min="0" /></div>
+          <div><label>Yoga</label><input id="yogaMin" type="number" min="0" /></div>
+        </div>
+        <h3>Prayer</h3>
+        <label>Prayer minutes</label><input id="prayerMin" type="number" min="0" />
+        <div class="check"><input id="morningPrayer" type="checkbox" /><span>Morning prayer</span></div>
+        <div class="check"><input id="examen" type="checkbox" /><span>Examen</span></div>
+        <div class="check"><input id="scripture" type="checkbox" /><span>Scripture</span></div>
+        <label>Rosary</label><select id="rosaryStatus"><option value="none">Not prayed</option><option value="partial">Partial</option><option value="complete">Complete</option></select>
+        <h3>Study and sleep</h3>
+        <div class="row">
+          <div><label>Study minutes</label><input id="studyMin" type="number" min="0" /></div>
+          <div><label>Study focus</label><select id="studyFocus"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+        </div>
+        <div class="row">
+          <div><label>Sleep hours</label><input id="sleepHours" type="number" min="0" step="0.1" /></div>
+          <div><label>Sleep quality (1-5)</label><select id="sleepQuality"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
+        </div>
+        <div class="row">
+          <div><label>Bedtime</label><input id="bedtime" type="time" /></div>
+          <div><label>Wake time</label><input id="wakeTime" type="time" /></div>
+        </div>
+        <div class="check"><input id="windDown" type="checkbox" /><span>Wind-down completed</span></div>
+        <label>Sleep notes</label><textarea id="sleepNotes" placeholder="Insomnia symptoms, awakenings, restlessness, etc."></textarea>
+        <h3>Diet</h3>
+        <div class="check"><input id="dietPlan" type="checkbox" /><span>Followed plan</span></div>
+        <div class="check"><input id="noSugar" type="checkbox" /><span>No added sugar</span></div>
+        <div class="check"><input id="noLate" type="checkbox" /><span>No late eating</span></div>
+        <div class="check"><input id="noJunk" type="checkbox" /><span>No junk food / snacks</span></div>
+        <label>Notes</label><textarea id="dailyNotes"></textarea>
+        <div class="sticky-actions">
+          <button type="button" id="saveDayBtn">Save day</button>
+          <button type="button" class="secondary" id="loadDayBtn">Load selected day</button>
+          <button type="button" class="secondary" id="resetDayBtn">Clear form</button>
+        </div>
+        <div id="dailyStatus" class="status"></div>
+      </div>
+      <div class="card">
+        <h2>Daily snapshot</h2>
+        <div class="kpi">
+          <div class="box"><div class="label">Total exercise</div><div class="value" id="snapExercise">0</div></div>
+          <div class="box"><div class="label">Prayer</div><div class="value" id="snapPrayer">0</div></div>
+          <div class="box"><div class="label">Study</div><div class="value" id="snapStudy">0</div></div>
+          <div class="box"><div class="label">Sleep</div><div class="value" id="snapSleep">0</div></div>
+        </div>
+        <div id="snapPills"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-weekly" class="tab"><div class="grid two">
+    <div class="card"><h2>Weekly overview</h2><div class="kpi">
+      <div class="box"><div class="label">Qualifying days</div><div class="value" id="weeklyQualifyingDays">0</div></div>
+      <div class="box"><div class="label">Exercise total</div><div class="value" id="weeklyExerciseTotal">0</div></div>
+      <div class="box"><div class="label">Prayer minutes</div><div class="value" id="weeklyPrayerMin">0</div></div>
+      <div class="box"><div class="label">Rosary complete</div><div class="value" id="weeklyRosaryDays">0</div></div>
+      <div class="box"><div class="label">Avg sleep</div><div class="value" id="weeklySleepAvg">0</div></div>
+    </div></div>
+    <div class="card"><h2>Last 7 days</h2><div id="weeklyRows" class="table"></div></div>
+  </div></section>
+
+  <section id="tab-monthly" class="tab"><div class="grid two">
+    <div class="card"><h2>This month</h2><p class="section-note">Month-to-date averages and consistency markers.</p><div class="kpi">
+      <div class="box"><div class="label">Saved days</div><div class="value" id="monthlyDays">0</div></div>
+      <div class="box"><div class="label">Avg exercise</div><div class="value" id="monthlyAvgExercise">0</div></div>
+      <div class="box"><div class="label">Avg prayer</div><div class="value" id="monthlyAvgPrayer">0</div></div>
+      <div class="box"><div class="label">Avg sleep</div><div class="value" id="monthlyAvgSleep">0</div></div>
+    </div></div>
+    <div class="card"><h2>Consistency</h2><div id="monthlyPills"></div></div>
+  </div></section>
+
+  <section id="tab-exercise" class="tab"><div class="grid two">
+    <div class="card"><h2>Weekly exercise totals</h2><p class="section-note">Minutes completed this week compared with the exercise structure you set.</p><div class="kpi">
+      <div class="box"><div class="label">Cardio</div><div class="value" id="exCardio">0</div></div>
+      <div class="box"><div class="label">Walking</div><div class="value" id="exWalking">0</div></div>
+      <div class="box"><div class="label">Strength</div><div class="value" id="exStrength">0</div></div>
+      <div class="box"><div class="label">Yoga</div><div class="value" id="exYoga">0</div></div>
+    </div></div>
+    <div class="card"><h2>Recent exercise days</h2><div id="exerciseRows" class="table"></div></div>
+  </div></section>
+
+  <section id="tab-prayer" class="tab"><div class="grid two">
+    <div class="card"><h2>Prayer overview</h2><p class="section-note">Prayer practices, rosary completion, and target-meeting days across the week and month.</p><div class="kpi">
+      <div class="box"><div class="label">Prayer minutes (week)</div><div class="value" id="prayerMinutesWeek">0</div></div>
+      <div class="box"><div class="label">Rosary complete</div><div class="value" id="prayerRosaryWeek">0</div></div>
+      <div class="box"><div class="label">Rosary partial</div><div class="value" id="prayerRosaryPartialWeek">0</div></div>
+      <div class="box"><div class="label">Morning prayer</div><div class="value" id="prayerMorningWeek">0</div></div>
+      <div class="box"><div class="label">Examen</div><div class="value" id="prayerExamenWeek">0</div></div>
+      <div class="box"><div class="label">Scripture</div><div class="value" id="prayerScriptureWeek">0</div></div>
+      <div class="box"><div class="label">Evening prayer</div><div class="value" id="prayerEveningWeek">0</div></div>
+      <div class="box"><div class="label">Meditation</div><div class="value" id="prayerMeditationWeek">0</div></div>
+      <div class="box"><div class="label">Rosary month</div><div class="value" id="prayerRosaryMonth">0</div></div>
+      <div class="box"><div class="label">Prayer target days</div><div class="value" id="prayerTargetDaysWeek">0</div></div>
+    </div></div>
+    <div class="card"><h2>Recent prayer days</h2><div id="prayerRows" class="table"></div></div>
+  </div></section>
+
+  <section id="tab-settings" class="tab"><div class="grid two">
+    <div class="card"><h2>Targets</h2><p class="section-note">Adjust these anytime. Reviews and dashboard calculations use your saved settings.</p>
+      <div class="row"><div><label>Daily exercise target</label><input id="setDailyExerciseTarget" type="number" min="0" /></div><div><label>Qualifying exercise days/week</label><input id="setWeeklyQualifyingDays" type="number" min="0" /></div></div>
+      <div class="row"><div><label>Weekly cardio target</label><input id="setCardioWeekly" type="number" min="0" /></div><div><label>Weekly walking target</label><input id="setWalkingWeekly" type="number" min="0" /></div></div>
+      <div class="row"><div><label>Weekly strength target</label><input id="setStrengthWeekly" type="number" min="0" /></div><div><label>Weekly yoga target</label><input id="setYogaWeekly" type="number" min="0" /></div></div>
+      <div class="row"><div><label>Prayer minute target</label><input id="setPrayerMinutes" type="number" min="0" /></div><div><label>Study minute target</label><input id="setStudyMinutes" type="number" min="0" /></div></div>
+      <div class="row"><div><label>Sleep minimum</label><input id="setSleepMin" type="number" min="0" step="0.1" /></div><div><label>Sleep ideal</label><input id="setSleepIdeal" type="number" min="0" step="0.1" /></div></div>
+      <div class="row"><div><label>Target bedtime</label><input id="setBedtimeTarget" type="time" /></div><div><label>Target wake time</label><input id="setWakeTarget" type="time" /></div></div>
+      <div class="check"><input id="setTrackWindDown" type="checkbox" /><span>Track wind-down completion</span></div>
+      <div class="check"><input id="setRequireMorningPrayer" type="checkbox" /><span>Require morning prayer</span></div>
+      <div class="check"><input id="setRequireEveningPrayer" type="checkbox" /><span>Require evening prayer</span></div>
+      <div class="check"><input id="setRequireExamen" type="checkbox" /><span>Require examen</span></div>
+      <div class="check"><input id="setRequireScripture" type="checkbox" /><span>Require scripture</span></div>
+      <div class="check"><input id="setRequireMeditation" type="checkbox" /><span>Require meditation / contemplation</span></div>
+      <div class="check"><input id="setRequireRosary" type="checkbox" /><span>Require rosary</span></div>
+      <div class="check"><input id="setDietRequirePlan" type="checkbox" /><span>Diet requires plan</span></div>
+      <div class="check"><input id="setDietRequireNoSugar" type="checkbox" /><span>Diet requires no sugar</span></div>
+      <div class="check"><input id="setDietRequireNoLate" type="checkbox" /><span>Diet requires no late eating</span></div>
+      <div class="check"><input id="setDietRequireNoJunk" type="checkbox" /><span>Diet requires no junk food/snacks</span></div>
+      <button type="button" id="saveSettingsBtn">Save settings</button>
+      <button type="button" class="secondary" id="resetSettingsBtn">Reset settings</button>
+      <div id="settingsStatus" class="status"></div>
+    </div>
+    <div class="card"><h2>Backup</h2>
+      <button type="button" id="exportBtn">Export backup JSON</button>
+      <label>Import backup</label><input id="importFile" type="file" accept="application/json" />
+      <div class="small muted">Import replaces local entries and settings.</div>
+      <div id="backupStatus" class="status"></div>
+    </div>
+  </div></section>
+
+  <section id="tab-sync" class="tab"><div class="grid two">
+    <div class="card"><h2>Firebase sync</h2><p class="section-note">Save your Firebase config once per device, then sign in and push or pull your data.</p>
+      <label>Firebase web config JSON</label><textarea id="firebaseConfigBox" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+      <button type="button" id="saveFirebaseConfigBtn">Save Firebase config</button>
+      <label>Email</label><input id="syncEmail" type="email" />
+      <label>Password</label><input id="syncPassword" type="password" />
+      <button type="button" id="createAccountBtn">Create sync account</button>
+      <button type="button" class="secondary" id="signInBtn">Sign in</button>
+      <button type="button" class="secondary" id="signOutBtn">Sign out</button>
+      <div class="helper">Manual push/pull is no longer needed. Saved days and settings sync automatically when you are signed in.</div>
+      <div id="syncStatus" class="status"></div>
+    </div>
+    <div class="card"><h2>Sync note</h2><p class="muted small">Automatic sync is on in this version. After you save your Firebase config and sign in on each device, saves and reloads sync automatically.</p></div>
+  </div></section>
+</div>
+<script>
+(function(){
+'use strict';
+const STORAGE_KEY='habitTracker.entries.v1';
+const SETTINGS_KEY='habitTracker.settings.v1';
+const FIREBASE_KEY='habitTracker.firebaseConfig.v1';
+const defaults={dailyExerciseTarget:120,weeklyQualifyingDays:5,cardioWeekly:180,walkingWeekly:150,strengthWeekly:120,yogaWeekly:150,prayerMinutes:20,studyMinutes:45,requireMorningPrayer:false,requireEveningPrayer:false,requireExamen:false,requireScripture:false,requireMeditation:false,requireRosary:true,sleepMin:7,sleepIdeal:8,bedtimeTarget:'22:30',wakeTarget:'06:00',trackWindDown:true,dietRequirePlan:true,dietRequireNoSugar:false,dietRequireNoLate:false,dietRequireNoJunk:false};
+let firebaseApp=null, auth=null, db=null, authReady=false;
+let initializeApp,getApps,getApp,getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,getFirestore,doc,setDoc,getDoc;
+const $=id=>document.getElementById(id);
+const todayISO=()=>new Date().toISOString().slice(0,10);
+const num=v=>Number(v)||0;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const pct=(v,t)=>t>0?clamp((v/t)*100,0,100):0;
+const saveLS=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const readLS=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)); return v??f;}catch{return f;}};
+const getEntries=()=>readLS(STORAGE_KEY,[]);
+const setEntries=v=>saveLS(STORAGE_KEY,v);
+const getSettings=()=>({...defaults,...readLS(SETTINGS_KEY,{})});
+const setSettings=v=>saveLS(SETTINGS_KEY,v);
+const getConfig=()=>readLS(FIREBASE_KEY,null);
+const setConfig=v=>saveLS(FIREBASE_KEY,v);
+const sortEntries=list=>[...list].sort((a,b)=>a.date.localeCompare(b.date));
+const getEntryByDate=d=>getEntries().find(e=>e.date===d)||null;
+
+function upsertEntry(entry){
+  const clean={...entry, date:(entry.date||todayISO()).slice(0,10)};
+  const entries=getEntries().filter(e=>e.date!==clean.date);
+  entries.push(clean);
+  setEntries(sortEntries(entries));
+  return clean;
+}
+function isoDaysAgo(days){
+  const d=new Date();
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate()-days);
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function weekEntries(){
+  const start=isoDaysAgo(6);
+  return sortEntries(getEntries().filter(e=>e.date>=start && e.date<=todayISO()));
+}
+function monthEntries(){
+  const ym=todayISO().slice(0,7);
+  return sortEntries(getEntries().filter(e=>(e.date||'').slice(0,7)===ym));
+}
+function loadEntryForSelectedDate(){
+  const d=$('entryDate').value||todayISO();
+  const e=getEntryByDate(d);
+  fillForm(e||{date:d});
+  $('dailyStatus').textContent=e?`Loaded ${d}.`:`Starting fresh entry for ${d}.`;
+}
+function switchTab(name){document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.id==='tab-'+name));document.querySelectorAll('.tabbtn').forEach(btn=>btn.classList.toggle('active',btn.textContent.trim().toLowerCase()===name));}
+window.switchTab=switchTab;
+
+function collectEntry(){return{
+  date:$('entryDate').value||todayISO(),
+  cardioMin:num($('cardioMin').value),
+  walkingMin:num($('walkingMin').value),
+  strengthMin:num($('strengthMin').value),
+  yogaMin:num($('yogaMin').value),
+  prayerMin:num($('prayerMin').value),
+  morningPrayer:$('morningPrayer').checked,
+  eveningPrayer:$('eveningPrayer').checked,
+  examen:$('examen').checked,
+  scripture:$('scripture').checked,
+  meditation:$('meditation').checked,
+  prayerNotes:$('prayerNotes').value||'',
+  rosaryStatus:$('rosaryStatus').value,
+  studyMin:num($('studyMin').value),
+  studyFocus:$('studyFocus').value,
+  studyTopic:$('studyTopic').value||'',
+  studyType:$('studyType').value||'reading',
+  studyUnits:num($('studyUnits').value),
+  studyNotes:$('studyNotes').value||'',
+  sleepHours:num($('sleepHours').value),
+  sleepQuality:num($('sleepQuality').value),
+  bedtime:$('bedtime').value||'',
+  wakeTime:$('wakeTime').value||'',
+  windDown:$('windDown').checked,
+  sleepNotes:$('sleepNotes').value||'',
+  dietPlan:$('dietPlan').checked,
+  noSugar:$('noSugar').checked,
+  noLate:$('noLate').checked,
+  noJunk:$('noJunk').checked,
+  notes:$('dailyNotes').value||''
+};}
+function fillForm(e){
+  $('entryDate').value=e.date||todayISO();
+  $('cardioMin').value=e.cardioMin||'';
+  $('walkingMin').value=e.walkingMin||'';
+  $('strengthMin').value=e.strengthMin||'';
+  $('yogaMin').value=e.yogaMin||'';
+  $('prayerMin').value=e.prayerMin||'';
+  $('morningPrayer').checked=!!e.morningPrayer;
+  $('eveningPrayer').checked=!!e.eveningPrayer;
+  $('examen').checked=!!e.examen;
+  $('scripture').checked=!!e.scripture;
+  $('meditation').checked=!!e.meditation;
+  $('prayerNotes').value=e.prayerNotes||'';
+  $('rosaryStatus').value=e.rosaryStatus||(e.rosary?'complete':'none');
+  $('studyMin').value=e.studyMin||'';
+  $('studyFocus').value=e.studyFocus||'low';
+  $('studyTopic').value=e.studyTopic||'';
+  $('studyType').value=e.studyType||'reading';
+  $('studyUnits').value=e.studyUnits||'';
+  $('studyNotes').value=e.studyNotes||'';
+  $('sleepHours').value=e.sleepHours||'';
+  $('sleepQuality').value=String(e.sleepQuality||3);
+  $('bedtime').value=e.bedtime||'';
+  $('wakeTime').value=e.wakeTime||'';
+  $('windDown').checked=!!e.windDown;
+  $('sleepNotes').value=e.sleepNotes||'';
+  $('dietPlan').checked=!!e.dietPlan;
+  $('noSugar').checked=!!e.noSugar;
+  $('noLate').checked=!!e.noLate;
+  $('noJunk').checked=!!e.noJunk;
+  $('dailyNotes').value=e.notes||'';
+  updateDailySnapshot();
+}
+function clearForm(){fillForm({date:$('entryDate').value||todayISO()});$('dailyStatus').textContent='Form cleared.';}
+function loadSettingsIntoForm(){
+  const s=getSettings();
+  $('setDailyExerciseTarget').value=s.dailyExerciseTarget;
+  $('setWeeklyQualifyingDays').value=s.weeklyQualifyingDays;
+  $('setCardioWeekly').value=s.cardioWeekly;
+  $('setWalkingWeekly').value=s.walkingWeekly;
+  $('setStrengthWeekly').value=s.strengthWeekly;
+  $('setYogaWeekly').value=s.yogaWeekly;
+  $('setPrayerMinutes').value=s.prayerMinutes;
+  $('setStudyMinutes').value=s.studyMinutes;
+  $('setRequireMorningPrayer').checked=s.requireMorningPrayer;
+  $('setRequireEveningPrayer').checked=!!s.requireEveningPrayer;
+  $('setRequireExamen').checked=s.requireExamen;
+  $('setRequireScripture').checked=s.requireScripture;
+  $('setRequireMeditation').checked=!!s.requireMeditation;
+  $('setRequireRosary').checked=s.requireRosary;
+  $('setSleepMin').value=s.sleepMin;
+  $('setSleepIdeal').value=s.sleepIdeal;
+  $('setBedtimeTarget').value=s.bedtimeTarget||'';
+  $('setWakeTarget').value=s.wakeTarget||'';
+  $('setTrackWindDown').checked=!!s.trackWindDown;
+  $('setDietRequirePlan').checked=s.dietRequirePlan;
+  $('setDietRequireNoSugar').checked=s.dietRequireNoSugar;
+  $('setDietRequireNoLate').checked=s.dietRequireNoLate;
+  $('setDietRequireNoJunk').checked=!!s.dietRequireNoJunk;
+}
+function saveSettingsFromForm(){
+  const s={
+    dailyExerciseTarget:num($('setDailyExerciseTarget').value),
+    weeklyQualifyingDays:num($('setWeeklyQualifyingDays').value),
+    cardioWeekly:num($('setCardioWeekly').value),
+    walkingWeekly:num($('setWalkingWeekly').value),
+    strengthWeekly:num($('setStrengthWeekly').value),
+    yogaWeekly:num($('setYogaWeekly').value),
+    prayerMinutes:num($('setPrayerMinutes').value),
+    studyMinutes:num($('setStudyMinutes').value),
+    requireMorningPrayer:$('setRequireMorningPrayer').checked,
+    requireEveningPrayer:$('setRequireEveningPrayer').checked,
+    requireExamen:$('setRequireExamen').checked,
+    requireScripture:$('setRequireScripture').checked,
+    requireMeditation:$('setRequireMeditation').checked,
+    requireRosary:$('setRequireRosary').checked,
+    sleepMin:num($('setSleepMin').value),
+    sleepIdeal:num($('setSleepIdeal').value),
+    bedtimeTarget:$('setBedtimeTarget').value||'',
+    wakeTarget:$('setWakeTarget').value||'',
+    trackWindDown:$('setTrackWindDown').checked,
+    dietRequirePlan:$('setDietRequirePlan').checked,
+    dietRequireNoSugar:$('setDietRequireNoSugar').checked,
+    dietRequireNoLate:$('setDietRequireNoLate').checked,
+    dietRequireNoJunk:$('setDietRequireNoJunk').checked
+  };
+  setSettings(s);$('settingsStatus').textContent='Settings saved.';refreshAll();
+}
+function resetSettings(){setSettings(defaults);loadSettingsIntoForm();$('settingsStatus').textContent='Settings reset.';refreshAll();}
+function rosaryLabel(status){return status==='complete'?'Complete':status==='partial'?'Partial':'Not prayed';}
+function prayerTargetMet(e,s){
+  return num(e.prayerMin)>=s.prayerMinutes &&
+    (!s.requireMorningPrayer || e.morningPrayer) &&
+    (!s.requireEveningPrayer || e.eveningPrayer) &&
+    (!s.requireExamen || e.examen) &&
+    (!s.requireScripture || e.scripture) &&
+    (!s.requireMeditation || e.meditation) &&
+    (!s.requireRosary || e.rosaryStatus==='complete');
+}
+
+function sleepWithinBedtime(e,s){return !s.bedtimeTarget || !e.bedtime ? false : e.bedtime<=s.bedtimeTarget;}
+function dietScore(e,s){
+  const checks=[];
+  if(s.dietRequirePlan) checks.push(e.dietPlan);
+  if(s.dietRequireNoSugar) checks.push(e.noSugar);
+  if(s.dietRequireNoLate) checks.push(e.noLate);
+  if(s.dietRequireNoJunk) checks.push(e.noJunk);
+  if(!checks.length) return e.dietPlan?100:0;
+  return Math.round((checks.filter(Boolean).length/checks.length)*100);
+}
+function categoryScores(e,s){
+  const exTotal=num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin);
+  const exercise=Math.round(pct(exTotal,s.dailyExerciseTarget||1));
+  let prayerChecks=1 + (s.requireMorningPrayer?1:0) + (s.requireEveningPrayer?1:0) + (s.requireExamen?1:0) + (s.requireScripture?1:0) + (s.requireMeditation?1:0) + (s.requireRosary?1:0);
+  let prayerGot=(num(e.prayerMin)>=s.prayerMinutes?1:0) + ((s.requireMorningPrayer&&e.morningPrayer)?1:0) + ((s.requireEveningPrayer&&e.eveningPrayer)?1:0) + ((s.requireExamen&&e.examen)?1:0) + ((s.requireScripture&&e.scripture)?1:0) + ((s.requireMeditation&&e.meditation)?1:0) + ((s.requireRosary&&e.rosaryStatus==='complete')?1:0);
+  const prayer=Math.round((prayerGot/prayerChecks)*100);
+  const study=Math.round(pct(num(e.studyMin),s.studyMinutes||1));
+  const sleepBase=Math.round(pct(num(e.sleepHours),s.sleepMin||1));
+  const sleep=Math.round((sleepBase + (sleepWithinBedtime(e,s)?100:0) + (s.trackWindDown?(e.windDown?100:0):100))/ (s.trackWindDown?3:2));
+  const diet=dietScore(e,s);
+  return {exercise,prayer,study,sleep,diet,overall:Math.round((exercise+prayer+study+sleep+diet)/5)};
+}
+function scoreClass(n){return n>=85?'good':n>=60?'warn':'bad';}
+function updateDailySnapshot(){
+  const e=collectEntry();
+  const s=getSettings();
+  const scores=categoryScores(e,s);
+  const total=e.cardioMin+e.walkingMin+e.strengthMin+e.yogaMin;
+  $('snapExercise').textContent=String(total);
+  $('snapPrayer').textContent=String(e.prayerMin);
+  $('snapStudy').textContent=String(e.studyMin);
+  $('snapSleep').textContent=String(e.sleepHours);
+  $('snapPills').innerHTML=[`Overall ${scores.overall}%`,`Exercise ${scores.exercise}%`,`Prayer ${scores.prayer}%`,`Study ${scores.study}%`,`Sleep ${scores.sleep}%`,`Diet ${scores.diet}%`,
+    e.morningPrayer&&'Morning prayer',
+    e.eveningPrayer&&'Evening prayer',
+    e.examen&&'Examen',
+    e.scripture&&'Scripture',
+    e.meditation&&'Meditation/contemplation',
+    e.rosaryStatus!=='none'&&`Rosary: ${rosaryLabel(e.rosaryStatus)}`,
+    e.studyTopic&&`Study: ${e.studyTopic}`,
+    e.studyUnits&&`Units: ${e.studyUnits}`,
+    e.windDown&&'Wind-down',
+    e.dietPlan&&'Diet plan',
+    e.noSugar&&'No sugar',
+    e.noLate&&'No late eating',
+    e.noJunk&&'No junk/snacks',
+    e.bedtime&&`Bedtime ${e.bedtime}`,
+    e.wakeTime&&`Wake ${e.wakeTime}`
+  ].filter(Boolean).map(x=>`<span class="pill">${x}</span>`).join('')||'<span class="muted small">No tags selected.</span>';
+}
+function setBar(id,val){$(id).style.width=clamp(val,0,100)+'%';}
+function renderDashboard(){
+  const today=getEntryByDate(todayISO())||collectEntry();
+  const s=getSettings();
+  const scores=categoryScores(today,s);
+  const total=today.cardioMin+today.walkingMin+today.strengthMin+today.yogaMin;
+  $('dashOverallScore').textContent=`${scores.overall}%`;
+  $('dashOverallScore').className='score '+scoreClass(scores.overall);
+  $('dashExerciseToday').textContent=String(total);
+  $('dashExerciseHelper').textContent=`${total} of ${s.dailyExerciseTarget} min target`;
+  $('dashPrayer').textContent=String(today.prayerMin||0);
+  $('dashPrayerHelper').textContent=prayerTargetMet(today,s)?'Prayer target met':'Prayer target not yet met';
+  $('dashRosary').textContent=rosaryLabel(today.rosaryStatus||(today.rosary?'complete':'none'));
+  $('dashRosaryHelper').textContent=s.requireRosary?'Required in targets':'Tracked daily';
+  $('dashStudy').textContent=String(today.studyMin||0);
+  $('dashStudyHelper').textContent=`${today.studyMin||0} of ${s.studyMinutes} min target`;
+  $('dashSleep').textContent=String(today.sleepHours||0);
+  $('dashSleepHelper').textContent=`Min ${s.sleepMin}h · bedtime ${s.bedtimeTarget||'—'}`;
+  $('dashDietScore').textContent=`${scores.diet}%`;
+  $('dashDietHelper').textContent=`Diet adherence today`;
+  $('dashCategoryPills').innerHTML=[['Exercise',scores.exercise],['Prayer',scores.prayer],['Study',scores.study],['Sleep',scores.sleep],['Diet',scores.diet]].map(([k,v])=>`<span class="pill">${k}: ${v}%</span>`).join('');
+  const w=weekEntries();
+  const cardio=w.reduce((a,e)=>a+num(e.cardioMin),0),walking=w.reduce((a,e)=>a+num(e.walkingMin),0),strength=w.reduce((a,e)=>a+num(e.strengthMin),0),yoga=w.reduce((a,e)=>a+num(e.yogaMin),0),qual=w.filter(e=>(num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin))>=s.dailyExerciseTarget).length;
+  $('weekQualifyingText').textContent=`${qual} / ${s.weeklyQualifyingDays}`;
+  setBar('weekQualifyingBar',pct(qual,s.weeklyQualifyingDays));
+  [['Cardio',cardio,s.cardioWeekly],['Walking',walking,s.walkingWeekly],['Strength',strength,s.strengthWeekly],['Yoga',yoga,s.yogaWeekly]].forEach(([name,val,target])=>{$('dash'+name+'Text').textContent=`${val} / ${target}`;setBar('dash'+name+'Bar',pct(val,target));});
+  $('dashPrayerDays').textContent=String(w.filter(e=>prayerTargetMet(e,s)).length);
+  $('dashRosaryDays').textContent=String(w.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='complete').length);
+  $('dashSleepAvg').textContent=(w.length?(w.reduce((a,e)=>a+num(e.sleepHours),0)/w.length):0).toFixed(1)+'h';
+  $('dashDietDays').textContent=String(w.filter(e=>dietScore(e,s)>=80).length);
+  $('heroDatePill').textContent=todayISO();
+  $('heroEntriesPill').textContent=`${getEntries().length} saved days`;
+  $('heroWeeklyPill').textContent=`${qual} / ${s.weeklyQualifyingDays} exercise days`;
+}
+function renderWeekly(){
+  const w=weekEntries();const s=getSettings();
+  const qual=w.filter(e=>(num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin))>=s.dailyExerciseTarget).length;
+  const exTotal=w.reduce((a,e)=>a+num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin),0);
+  $('weeklyQualifyingDays').textContent=String(qual);
+  $('weeklyExerciseTotal').textContent=String(exTotal);
+  $('weeklyPrayerMin').textContent=String(w.reduce((a,e)=>a+num(e.prayerMin),0));
+  $('weeklyRosaryDays').textContent=String(w.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='complete').length);
+  $('weeklySleepAvg').textContent=(w.length?(w.reduce((a,e)=>a+num(e.sleepHours),0)/w.length):0).toFixed(1);
+  $('weeklyRows').innerHTML=w.length?w.map(e=>{
+    const total=num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin);
+    const ros=rosaryLabel(e.rosaryStatus||(e.rosary?'complete':'none'));
+    const sc=categoryScores(e,s);
+    const studyInfo=e.studyTopic?` · ${e.studyTopic}`:'';
+    return `<div class="trow"><div>${e.date}</div><div>${total} min · ${sc.overall}%${studyInfo}</div><div>${ros}${e.sleepHours?` · ${e.sleepHours}h`:''}</div></div>`;
+  }).join(''):'<div class="muted">No entries yet.</div>';
+}
+function renderMonthly(){
+  const m=monthEntries();const len=m.length||1;const ex=m.reduce((a,e)=>a+num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin),0);const pr=m.reduce((a,e)=>a+num(e.prayerMin),0);const sl=m.reduce((a,e)=>a+num(e.sleepHours),0);const s=getSettings();
+  $('monthlyDays').textContent=String(m.length);$('monthlyAvgExercise').textContent=(ex/len).toFixed(0);$('monthlyAvgPrayer').textContent=(pr/len).toFixed(0);$('monthlyAvgSleep').textContent=(sl/len).toFixed(1);
+  $('monthlyPills').innerHTML=`
+    <span class="pill">Rosary complete: ${m.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='complete').length}</span>
+    <span class="pill">Rosary partial: ${m.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='partial').length}</span>
+    <span class="pill">Morning prayer days: ${m.filter(e=>e.morningPrayer).length}</span>
+    <span class="pill">Evening prayer days: ${m.filter(e=>e.eveningPrayer).length}</span>
+    <span class="pill">Meditation days: ${m.filter(e=>e.meditation).length}</span>
+    <span class="pill">Study target days: ${m.filter(e=>num(e.studyMin)>=s.studyMinutes).length}</span>
+    <span class="pill">Sleep target nights: ${m.filter(e=>num(e.sleepHours)>=s.sleepMin).length}</span>
+    <span class="pill">No junk/snacks days: ${m.filter(e=>e.noJunk).length}</span>
+    <span class="pill">Prayer target days: ${m.filter(e=>prayerTargetMet(e,s)).length}</span>
+    <span class="pill">120-min exercise days: ${m.filter(e=>(num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin))>=s.dailyExerciseTarget).length}</span>`;
+}
+function renderExercise(){
+  const w=weekEntries();
+  $('exCardio').textContent=String(w.reduce((a,e)=>a+num(e.cardioMin),0));
+  $('exWalking').textContent=String(w.reduce((a,e)=>a+num(e.walkingMin),0));
+  $('exStrength').textContent=String(w.reduce((a,e)=>a+num(e.strengthMin),0));
+  $('exYoga').textContent=String(w.reduce((a,e)=>a+num(e.yogaMin),0));
+  $('exerciseRows').innerHTML=w.length?w.map(e=>`<div class="trow"><div>${e.date}</div><div>${num(e.cardioMin)+num(e.walkingMin)+num(e.strengthMin)+num(e.yogaMin)} min</div><div>${e.cardioMin||0}/${e.walkingMin||0}/${e.strengthMin||0}/${e.yogaMin||0}</div></div>`).join(''):'<div class="muted">No entries yet.</div>';
+}
+function renderPrayer(){
+  const w=weekEntries(); const m=monthEntries(); const s=getSettings();
+  $('prayerMinutesWeek').textContent=String(w.reduce((a,e)=>a+num(e.prayerMin),0));
+  $('prayerRosaryWeek').textContent=String(w.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='complete').length);
+  $('prayerRosaryPartialWeek').textContent=String(w.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='partial').length);
+  $('prayerMorningWeek').textContent=String(w.filter(e=>e.morningPrayer).length);
+  $('prayerExamenWeek').textContent=String(w.filter(e=>e.examen).length);
+  $('prayerScriptureWeek').textContent=String(w.filter(e=>e.scripture).length);
+  $('prayerEveningWeek').textContent=String(w.filter(e=>e.eveningPrayer).length);
+  $('prayerMeditationWeek').textContent=String(w.filter(e=>e.meditation).length);
+  $('prayerRosaryMonth').textContent=String(m.filter(e=>(e.rosaryStatus||(e.rosary?'complete':'none'))==='complete').length);
+  $('prayerTargetDaysWeek').textContent=String(w.filter(e=>prayerTargetMet(e,s)).length);
+  $('prayerRows').innerHTML=w.length?w.map(e=>{
+    const items=[e.morningPrayer&&'Morning',e.eveningPrayer&&'Evening',e.examen&&'Examen',e.scripture&&'Scripture',e.meditation&&'Meditation',`Rosary: ${rosaryLabel(e.rosaryStatus||(e.rosary?'complete':'none'))}`].filter(Boolean).join(', ')||'—';
+    return `<div class="trow"><div>${e.date}</div><div>${e.prayerMin||0} min</div><div>${items}</div></div>`;
+  }).join(''):'<div class="muted">No entries yet.</div>';
+}
+
+function refreshAll(){updateDailySnapshot();renderDashboard();renderWeekly();renderMonthly();renderExercise();renderPrayer();}
+function exportBackup(){const blob=new Blob([JSON.stringify({entries:getEntries(),settings:getSettings()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='habit-tracker-backup.json';a.click();URL.revokeObjectURL(a.href);$('backupStatus').textContent='Backup exported.';}
+function importBackup(file){const r=new FileReader();r.onload=async ()=>{try{const data=JSON.parse(r.result);if(Array.isArray(data.entries))setEntries(sortEntries(data.entries));if(data.settings)setSettings({...defaults,...data.settings});loadSettingsIntoForm();fillForm(getEntryByDate($('entryDate').value)||{date:$('entryDate').value||todayISO()});refreshAll();$('backupStatus').textContent='Backup imported.';await autoSyncSave('Backup imported locally.');}catch(err){$('backupStatus').textContent='Import failed: '+err.message;}};r.readAsText(file);}
+async function ensureFirebase(){if(initializeApp&&getAuth&&getFirestore)return true;try{const appMod=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');const authMod=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');const dbMod=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');({initializeApp,getApps,getApp}=appMod);({getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut}=authMod);({getFirestore,doc,setDoc,getDoc}=dbMod);return true;}catch(err){$('syncStatus').textContent='Firebase SDK load failed: '+err.message;return false;}}
+async function initFirebase(show){if(!(await ensureFirebase()))return false;const config=getConfig();if(!config){if(show)$('syncStatus').textContent='No Firebase config saved yet.';return false;}try{firebaseApp=getApps().length?getApp():initializeApp(config);auth=getAuth(firebaseApp);db=getFirestore(firebaseApp);authReady=true;onAuthStateChanged(auth,async u=>{if(u){$('syncStatus').textContent=`Signed in as ${u.email||'user'}. Loading latest cloud data...`;await pullCloud(false);$('syncStatus').textContent=`Signed in as ${u.email||'user'}. Auto-sync active.`;}else{$('syncStatus').textContent='Firebase ready. Not signed in.';}});if(show)$('syncStatus').textContent='Firebase initialized.';return true;}catch(err){$('syncStatus').textContent='Firebase init failed: '+err.message;return false;}}
+async function saveFirebaseConfig(){try{const config=JSON.parse($('firebaseConfigBox').value.trim());setConfig(config);await initFirebase(true);}catch(err){$('syncStatus').textContent='Config save failed: '+err.message;}}
+async function createSyncAccount(){if(!authReady && !(await initFirebase(false)))return;try{await createUserWithEmailAndPassword(auth,$('syncEmail').value.trim(),$('syncPassword').value);$('syncStatus').textContent='Sync account created. Auto-sync active.';await pushCloud(false);}catch(err){$('syncStatus').textContent='Create account failed: '+err.message;}}
+async function signInSync(){if(!authReady && !(await initFirebase(false)))return;try{await signInWithEmailAndPassword(auth,$('syncEmail').value.trim(),$('syncPassword').value);await pullCloud(false);$('syncStatus').textContent='Signed in. Auto-sync active.';}catch(err){$('syncStatus').textContent='Sign in failed: '+err.message;}}
+async function signOutSync(){if(!authReady||!auth)return;try{await signOut(auth);$('syncStatus').textContent='Signed out.';}catch(err){$('syncStatus').textContent='Sign out failed: '+err.message;}}
+async function pushCloud(showSuccess=true){if(!authReady && !(await initFirebase(false)))return false;const user=auth.currentUser;if(!user){$('syncStatus').textContent='Auto-sync paused: not signed in.';return false;}try{await setDoc(doc(db,'users',user.uid,'app','habitTracker'),{entries:getEntries(),settings:getSettings(),updatedAt:new Date().toISOString()});if(showSuccess)$('syncStatus').textContent='Cloud sync complete.';return true;}catch(err){$('syncStatus').textContent='Cloud write failed: '+err.message;return false;}}
+async function pullCloud(showSuccess=true){if(!authReady && !(await initFirebase(false)))return false;const user=auth.currentUser;if(!user){$('syncStatus').textContent='Auto-sync paused: not signed in.';return false;}try{const snap=await getDoc(doc(db,'users',user.uid,'app','habitTracker'));if(!snap.exists()){$('syncStatus').textContent='Signed in. No cloud data yet.';return true;}const data=snap.data();if(Array.isArray(data.entries))setEntries(sortEntries(data.entries));if(data.settings)setSettings({...defaults,...data.settings});loadSettingsIntoForm();fillForm(getEntryByDate($('entryDate').value)||{date:$('entryDate').value||todayISO()});refreshAll();if(showSuccess)$('syncStatus').textContent='Latest cloud data loaded.';return true;}catch(err){$('syncStatus').textContent='Cloud read failed: '+err.message;return false;}}
+async function autoSyncSave(note='Changes saved locally.'){$('syncStatus').textContent=note;await pushCloud(false);if(auth&&auth.currentUser){$('syncStatus').textContent='Saved locally and synced to cloud.';}}
+function bind(){
+  ['cardioMin','walkingMin','strengthMin','yogaMin','prayerMin','studyMin','sleepHours','sleepQuality','studyFocus','studyTopic','studyType','studyUnits','studyNotes','dietPlan','noSugar','noLate','noJunk','morningPrayer','eveningPrayer','examen','scripture','meditation','prayerNotes','rosaryStatus','bedtime','wakeTime','windDown','dailyNotes','sleepNotes'].forEach(id=>$(id).addEventListener('input',updateDailySnapshot));
+  $('entryDate').addEventListener('change',loadEntryForSelectedDate);
+  $('saveDayBtn').addEventListener('click',async ()=>{
+    const saved=upsertEntry(collectEntry());
+    fillForm(saved);
+    $('dailyStatus').textContent=`Saved ${saved.date}.`;
+    refreshAll();
+    await autoSyncSave(`Saved ${saved.date} locally.`);
+  });
+  $('loadDayBtn').addEventListener('click',loadEntryForSelectedDate);
+  $('resetDayBtn').addEventListener('click',clearForm);
+  $('saveSettingsBtn').addEventListener('click',async ()=>{saveSettingsFromForm();await autoSyncSave('Settings saved locally.');});
+  $('resetSettingsBtn').addEventListener('click',resetSettings);
+  $('exportBtn').addEventListener('click',exportBackup);
+  $('importFile').addEventListener('change',e=>e.target.files&&e.target.files[0]&&importBackup(e.target.files[0]));
+  $('saveFirebaseConfigBtn').addEventListener('click',saveFirebaseConfig);
+  $('createAccountBtn').addEventListener('click',createSyncAccount);
+  $('signInBtn').addEventListener('click',signInSync);
+  $('signOutBtn').addEventListener('click',signOutSync);
+
+}
+function init(){window.switchTab=switchTab;$('entryDate').value=todayISO();loadSettingsIntoForm();const cfg=getConfig();if(cfg)$('firebaseConfigBox').value=JSON.stringify(cfg,null,2);fillForm(getEntryByDate(todayISO())||{date:todayISO()});bind();switchTab('dashboard');refreshAll();initFirebase(false);} 
+window.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+</body>
+</html>
