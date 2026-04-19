@@ -53,7 +53,7 @@
       top: 0;
       z-index: 10;
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-columns: repeat(8, minmax(0, 1fr));
       gap: 8px;
       background: rgba(13,16,21,.82);
       backdrop-filter: blur(10px);
@@ -257,7 +257,8 @@
     </div>
 
     <div class="tabbar">
-      <button class="tabbtn active" data-tab="daily">Daily</button>
+      <button class="tabbtn active" data-tab="dashboard">Dashboard</button>
+      <button class="tabbtn" data-tab="daily">Daily</button>
       <button class="tabbtn" data-tab="weekly">Weekly</button>
       <button class="tabbtn" data-tab="monthly">Monthly</button>
       <button class="tabbtn" data-tab="exercise">Exercise</button>
@@ -266,7 +267,72 @@
       <button class="tabbtn" data-tab="sync">Sync</button>
     </div>
 
-    <section class="tab active" id="tab-daily">
+
+    <section class="tab active" id="tab-dashboard">
+      <div class="grid two">
+        <div class="card">
+          <h2>Dashboard</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">Today score</div><div class="value" id="dashTodayScore">0%</div></div>
+            <div class="box"><div class="label">Today's exercise</div><div class="value" id="dashTodayExercise">0</div></div>
+            <div class="box"><div class="label">120+ min today</div><div class="value" id="dashTodayQualifying">No</div></div>
+            <div class="box"><div class="label">Rosary today</div><div class="value" id="dashTodayRosary">No</div></div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Diet today</span><span id="dashDietLabel">0%</span></div>
+            <div class="progress"><span id="dashDietBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Exercise today</span><span id="dashExerciseLabel">0%</span></div>
+            <div class="progress"><span id="dashExerciseBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Prayer today</span><span id="dashPrayerLabel">0%</span></div>
+            <div class="progress"><span id="dashPrayerBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Study today</span><span id="dashStudyLabel">0%</span></div>
+            <div class="progress"><span id="dashStudyBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Sleep today</span><span id="dashSleepLabel">0%</span></div>
+            <div class="progress"><span id="dashSleepBar"></span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Week at a Glance</h2>
+          <div class="kpi">
+            <div class="box"><div class="label">Entries</div><div class="value" id="dashWeekEntries">0</div></div>
+            <div class="box"><div class="label">120+ min days</div><div class="value" id="dashWeekQualifying">0</div></div>
+            <div class="box"><div class="label">Target days</div><div class="value" id="dashWeekTargetDays">0</div></div>
+            <div class="box"><div class="label">Rosary days</div><div class="value" id="dashWeekRosary">0</div></div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Cardio weekly</span><span id="dashCardioTxt">0 / 0</span></div>
+            <div class="progress"><span id="dashCardioBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Walking weekly</span><span id="dashWalkingTxt">0 / 0</span></div>
+            <div class="progress"><span id="dashWalkingBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Strength weekly</span><span id="dashStrengthTxt">0 / 0</span></div>
+            <div class="progress"><span id="dashStrengthBar"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Yoga weekly</span><span id="dashYogaTxt">0 / 0</span></div>
+            <div class="progress"><span id="dashYogaBar"></span></div>
+          </div>
+
+          <div id="dashSummary" class="footer-note">Open Daily to log today’s entry, then return here for a quick overview.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-daily">
       <div class="grid two">
         <div class="card">
           <h2>Daily Entry</h2>
@@ -820,6 +886,62 @@
       updateProgress("sleepPct", scored.sleepScore);
     }
 
+    function renderDashboard() {
+      const settings = getSettings();
+      const today = $("entryDate").value || todayISO();
+      const entry = getEntryByDate(today) || collectEntryFromForm();
+      const scored = scoreEntry(entry, settings);
+      $("dashTodayScore").textContent = fmtPct(scored.overall);
+      $("dashTodayExercise").textContent = String(scored.totalExercise);
+      $("dashTodayQualifying").textContent = scored.qualifyingDay ? "Yes" : "No";
+      $("dashTodayRosary").textContent = entry.rosary ? "Yes" : "No";
+
+      const todayBars = [
+        ["dashDiet", scored.dietScore],
+        ["dashExercise", scored.exerciseScore],
+        ["dashPrayer", scored.prayerScore],
+        ["dashStudy", scored.studyScore],
+        ["dashSleep", scored.sleepScore]
+      ];
+      todayBars.forEach(([base, pct]) => {
+        $(base + "Label").textContent = fmtPct(pct);
+        $(base + "Bar").style.width = `${clamp(pct,0,100)}%`;
+      });
+
+      const week = getWeekEntries();
+      const scores = week.map(e => scoreEntry(e, settings));
+      const totals = {
+        cardio: week.reduce((a,e)=>a+normNum(e.cardioMin),0),
+        walking: week.reduce((a,e)=>a+normNum(e.walkingMin),0),
+        strength: week.reduce((a,e)=>a+normNum(e.strengthMin),0),
+        yoga: week.reduce((a,e)=>a+normNum(e.yogaMin),0)
+      };
+      const qualifyingDays = scores.filter(s => s.qualifyingDay).length;
+      $("dashWeekEntries").textContent = String(week.length);
+      $("dashWeekQualifying").textContent = String(qualifyingDays);
+      $("dashWeekTargetDays").textContent = String(settings.weeklyQualifyingDays);
+      $("dashWeekRosary").textContent = String(week.filter(e=>e.rosary).length);
+
+      const dashTargets = [
+        ["dashCardio", totals.cardio, settings.cardioWeekly],
+        ["dashWalking", totals.walking, settings.walkingWeekly],
+        ["dashStrength", totals.strength, settings.strengthWeekly],
+        ["dashYoga", totals.yoga, settings.yogaWeekly]
+      ];
+      dashTargets.forEach(([base,val,target]) => {
+        const pct = target > 0 ? clamp((val/target)*100,0,100) : 0;
+        $(base + "Txt").textContent = `${val} / ${target}`;
+        $(base + "Bar").style.width = `${pct}%`;
+      });
+
+      const avgScore = scores.length ? Math.round(scores.reduce((a,b)=>a+b.overall,0)/scores.length) : 0;
+      $("dashSummary").innerHTML = `
+        <strong>This week:</strong> ${qualifyingDays} of ${settings.weeklyQualifyingDays} qualifying exercise days completed.
+        Average score: ${fmtPct(avgScore)}. Prayer target met on ${scores.filter(s => s.prayerMet).length} day(s).
+      `;
+    }
+
+
     function renderWeekly() {
       const settings = getSettings();
       const week = getWeekEntries();
@@ -1158,6 +1280,7 @@
 
     function refreshAll() {
       updateDailySnapshot();
+      renderDashboard();
       renderWeekly();
       renderMonthly();
       renderExercise();
@@ -1212,6 +1335,7 @@
       const existing = getEntryByDate(todayISO());
       fillForm(existing || { date: todayISO() });
       bindEvents();
+      switchTab("dashboard");
       refreshAll();
       initFirebaseFromSavedConfig(false);
     }
