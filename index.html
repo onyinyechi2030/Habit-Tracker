@@ -273,6 +273,37 @@ const getConfig=()=>readLS(FIREBASE_KEY,null);
 const setConfig=v=>saveLS(FIREBASE_KEY,v);
 const sortEntries=list=>[...list].sort((a,b)=>a.date.localeCompare(b.date));
 const getEntryByDate=d=>getEntries().find(e=>e.date===d)||null;
+
+function upsertEntry(entry){
+  const clean={...entry, date:(entry.date||todayISO()).slice(0,10)};
+  const entries=getEntries().filter(e=>e.date!==clean.date);
+  entries.push(clean);
+  setEntries(sortEntries(entries));
+  return clean;
+}
+function isoDaysAgo(days){
+  const d=new Date();
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate()-days);
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function weekEntries(){
+  const start=isoDaysAgo(6);
+  return sortEntries(getEntries().filter(e=>e.date>=start && e.date<=todayISO()));
+}
+function monthEntries(){
+  const ym=todayISO().slice(0,7);
+  return sortEntries(getEntries().filter(e=>(e.date||'').slice(0,7)===ym));
+}
+function loadEntryForSelectedDate(){
+  const d=$('entryDate').value||todayISO();
+  const e=getEntryByDate(d);
+  fillForm(e||{date:d});
+  $('dailyStatus').textContent=e?`Loaded ${d}.`:`Starting fresh entry for ${d}.`;
+}
 function switchTab(name){document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.id==='tab-'+name));document.querySelectorAll('.tabbtn').forEach(btn=>btn.classList.toggle('active',btn.textContent.trim().toLowerCase()===name));}
 window.switchTab=switchTab;
 
@@ -532,7 +563,28 @@ async function signInSync(){if(!authReady && !(await initFirebase(false)))return
 async function signOutSync(){if(!authReady||!auth)return;try{await signOut(auth);$('syncStatus').textContent='Signed out.';}catch(err){$('syncStatus').textContent='Sign out failed: '+err.message;}}
 async function pushCloud(){if(!authReady && !(await initFirebase(false)))return;const user=auth.currentUser;if(!user){$('syncStatus').textContent='Push failed: not signed in.';return;}try{await setDoc(doc(db,'users',user.uid,'app','habitTracker'),{entries:getEntries(),settings:getSettings(),updatedAt:new Date().toISOString()});$('syncStatus').textContent='Local data pushed to cloud.';}catch(err){$('syncStatus').textContent='Cloud write failed: '+err.message;}}
 async function pullCloud(){if(!authReady && !(await initFirebase(false)))return;const user=auth.currentUser;if(!user){$('syncStatus').textContent='Pull failed: not signed in.';return;}try{const snap=await getDoc(doc(db,'users',user.uid,'app','habitTracker'));if(!snap.exists()){$('syncStatus').textContent='No cloud data found.';return;}const data=snap.data();if(Array.isArray(data.entries))setEntries(sortEntries(data.entries));if(data.settings)setSettings({...defaults,...data.settings});loadSettingsIntoForm();fillForm(getEntryByDate($('entryDate').value)||{date:$('entryDate').value||todayISO()});refreshAll();$('syncStatus').textContent='Cloud data pulled to this device.';}catch(err){$('syncStatus').textContent='Cloud read failed: '+err.message;}}
-function bind(){['entryDate','cardioMin','walkingMin','strengthMin','yogaMin','prayerMin','studyMin','sleepHours','sleepQuality','studyFocus','dietPlan','noSugar','noLate','noJunk','morningPrayer','examen','scripture','rosaryStatus','bedtime','wakeTime','windDown','dailyNotes','sleepNotes'].forEach(id=>$(id).addEventListener('input',updateDailySnapshot));$('saveDayBtn').addEventListener('click',()=>{const e=collectEntry();upsertEntry(e);$('dailyStatus').textContent=`Saved ${e.date}.`;refreshAll();});$('loadDayBtn').addEventListener('click',()=>{const d=$('entryDate').value||todayISO();const e=getEntryByDate(d);fillForm(e||{date:d});$('dailyStatus').textContent=e?`Loaded ${d}.`:`No saved entry for ${d}.`;});$('resetDayBtn').addEventListener('click',clearForm);$('saveSettingsBtn').addEventListener('click',saveSettingsFromForm);$('resetSettingsBtn').addEventListener('click',resetSettings);$('exportBtn').addEventListener('click',exportBackup);$('importFile').addEventListener('change',e=>e.target.files&&e.target.files[0]&&importBackup(e.target.files[0]));$('saveFirebaseConfigBtn').addEventListener('click',saveFirebaseConfig);$('createAccountBtn').addEventListener('click',createSyncAccount);$('signInBtn').addEventListener('click',signInSync);$('signOutBtn').addEventListener('click',signOutSync);$('pushCloudBtn').addEventListener('click',pushCloud);$('pullCloudBtn').addEventListener('click',pullCloud);}
+function bind(){
+  ['cardioMin','walkingMin','strengthMin','yogaMin','prayerMin','studyMin','sleepHours','sleepQuality','studyFocus','dietPlan','noSugar','noLate','noJunk','morningPrayer','examen','scripture','rosaryStatus','bedtime','wakeTime','windDown','dailyNotes','sleepNotes'].forEach(id=>$(id).addEventListener('input',updateDailySnapshot));
+  $('entryDate').addEventListener('change',loadEntryForSelectedDate);
+  $('saveDayBtn').addEventListener('click',()=>{
+    const saved=upsertEntry(collectEntry());
+    fillForm(saved);
+    $('dailyStatus').textContent=`Saved ${saved.date}.`;
+    refreshAll();
+  });
+  $('loadDayBtn').addEventListener('click',loadEntryForSelectedDate);
+  $('resetDayBtn').addEventListener('click',clearForm);
+  $('saveSettingsBtn').addEventListener('click',saveSettingsFromForm);
+  $('resetSettingsBtn').addEventListener('click',resetSettings);
+  $('exportBtn').addEventListener('click',exportBackup);
+  $('importFile').addEventListener('change',e=>e.target.files&&e.target.files[0]&&importBackup(e.target.files[0]));
+  $('saveFirebaseConfigBtn').addEventListener('click',saveFirebaseConfig);
+  $('createAccountBtn').addEventListener('click',createSyncAccount);
+  $('signInBtn').addEventListener('click',signInSync);
+  $('signOutBtn').addEventListener('click',signOutSync);
+  $('pushCloudBtn').addEventListener('click',pushCloud);
+  $('pullCloudBtn').addEventListener('click',pullCloud);
+}
 function init(){window.switchTab=switchTab;$('entryDate').value=todayISO();loadSettingsIntoForm();const cfg=getConfig();if(cfg)$('firebaseConfigBox').value=JSON.stringify(cfg,null,2);fillForm(getEntryByDate(todayISO())||{date:todayISO()});bind();switchTab('dashboard');refreshAll();initFirebase(false);} 
 window.addEventListener('DOMContentLoaded',init);
 })();
