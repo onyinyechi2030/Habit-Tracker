@@ -1,18 +1,1383 @@
-<label>Total Exercise (minutes)</label>
-<input id="exercise" type="number">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habit Tracker</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #dbe2ea;
+      --accent: #1f7a5a;
+      --accent-soft: #e7f5ef;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --good: #166534;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    header {
+      padding: 18px 16px 10px;
+      background: linear-gradient(180deg, #1f7a5a, #16614a);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 1.35rem;
+    }
+    header .sub {
+      font-size: 0.92rem;
+      opacity: 0.9;
+    }
+    nav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 12px 16px 0;
+      background: linear-gradient(180deg, #16614a, #16614a 55%, transparent 55%);
+    }
+    nav button {
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.14);
+      color: white;
+      padding: 10px 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    nav button.active {
+      background: white;
+      color: var(--accent);
+      font-weight: bold;
+    }
+    main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 3px 12px rgba(18, 32, 56, 0.05);
+      margin-bottom: 14px;
+    }
+    .card h2, .card h3 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+    .section-title {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    label {
+      display: block;
+      margin: 10px 0 4px;
+      font-size: 0.92rem;
+      font-weight: bold;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      color: var(--text);
+      font: inherit;
+    }
+    textarea { min-height: 68px; resize: vertical; }
+    .row2, .row3, .row4 {
+      display: grid;
+      gap: 12px;
+    }
+    .row2 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .row3 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .row4 { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    button.primary, button.secondary, button.warn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font: inherit;
+    }
+    button.primary { background: var(--accent); color: white; }
+    button.secondary { background: #eef2f7; color: var(--text); }
+    button.warn { background: #fff7ed; color: var(--warn); }
+    .pill {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.84rem;
+      margin: 0 8px 8px 0;
+    }
+    .metric {
+      font-size: 1.45rem;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .muted { color: var(--muted); }
+    .progress-wrap { margin-top: 8px; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+    .bar {
+      width: 100%;
+      height: 10px;
+      background: #edf2f7;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #1f7a5a, #49b38b);
+      border-radius: 999px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.94rem;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: bold; }
+    .status-good { color: var(--good); }
+    .status-bad { color: var(--bad); }
+    .status-warn { color: var(--warn); }
+    .sync-box {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .footer-note {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    @media (max-width: 680px) {
+      nav { grid-template-columns: repeat(2, 1fr); }
+      header h1 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Habit Tracker</h1>
+    <div class="sub">Detailed daily tracking with dashboard, weekly/monthly analysis, targets, and optional Firebase sync.</div>
+    <nav id="tabNav">
+      <button class="active" data-tab="dashboard">Dashboard</button>
+      <button data-tab="daily">Daily</button>
+      <button data-tab="weekly">Weekly</button>
+      <button data-tab="monthly">Monthly</button>
+      <button data-tab="exercise">Exercise</button>
+      <button data-tab="prayer">Prayer</button>
+      <button data-tab="settings">Settings</button>
+      <button data-tab="sync">Sync</button>
+    </nav>
+  </header>
 
-<label>Cardio (minutes)</label>
-<input id="cardio" type="number">
+  <main>
+    <section id="dashboard" class="tab active">
+      <div class="grid">
+        <div class="card">
+          <div class="section-title">Today</div>
+          <div class="metric" id="dashTodayScore">0%</div>
+          <div class="muted" id="dashTodayDate"></div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Exercise today</span><span id="dashExerciseToday">0 min</span></div>
+            <div class="bar"><span id="dashExerciseBar" style="width:0%"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Study today</span><span id="dashStudyToday">0 min</span></div>
+            <div class="bar"><span id="dashStudyBar" style="width:0%"></span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Sleep last night</span><span id="dashSleepToday">0 hr</span></div>
+            <div class="bar"><span id="dashSleepBar" style="width:0%"></span></div>
+          </div>
+        </div>
 
-<label>Walking (minutes)</label>
-<input id="walking" type="number">
+        <div class="card">
+          <div class="section-title">This Week</div>
+          <div class="metric" id="dashWeekExercise">0/0</div>
+          <div class="muted">Exercise days at threshold</div>
+          <div class="pill" id="dashWeekRosary">Rosary: 0 complete / 0 partial</div>
+          <div class="pill" id="dashWeekSleep">Avg sleep: 0.0 hr</div>
+          <div class="pill" id="dashWeekDiet">No junk days: 0</div>
+          <div class="pill" id="dashWeekStudy">Study: 0 min</div>
+        </div>
 
-<label>Strength (minutes)</label>
-<input id="strength" type="number">
+        <div class="card">
+          <div class="section-title">This Month</div>
+          <div class="metric" id="dashMonthScore">0%</div>
+          <div class="muted">Average monthly compliance</div>
+          <div class="pill" id="dashMonthExercise">Exercise total: 0</div>
+          <div class="pill" id="dashMonthPrayer">Rosary complete: 0</div>
+          <div class="pill" id="dashMonthStudy">Study total: 0</div>
+          <div class="pill" id="dashMonthSleep">Avg sleep: 0.0</div>
+        </div>
+      </div>
 
-<label>Yoga (minutes)</label>
-<input id="yoga" type="number">
+      <div class="grid">
+        <div class="card">
+          <h3>Today snapshot</h3>
+          <div id="todaySnapshot"></div>
+        </div>
+        <div class="card">
+          <h3>Key signals</h3>
+          <div id="keySignals"></div>
+        </div>
+      </div>
+    </section>
 
-<p style="font-size:12px;color:gray;">
-Enter all values in minutes (e.g., 45 = 45 minutes)
-</p>
+    <section id="daily" class="tab">
+      <div class="card">
+        <h2>Daily entry</h2>
+        <div class="row2">
+          <div>
+            <label for="entryDate">Date</label>
+            <input type="date" id="entryDate" />
+          </div>
+          <div>
+            <label for="overallNotes">Daily notes</label>
+            <textarea id="overallNotes" placeholder="Anything notable about the day overall"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="saveDayBtn" type="button">Save day</button>
+          <button class="secondary" id="reloadDayBtn" type="button">Reload selected date</button>
+          <button class="warn" id="clearDayBtn" type="button">Clear current form</button>
+        </div>
+        <div class="footer-note" id="saveStatus">No changes saved yet.</div>
+      </div>
+
+      <div class="card">
+        <h3>Diet</h3>
+        <div class="row3">
+          <div>
+            <label for="dietPlan">Followed plan</label>
+            <select id="dietPlan"><option>Yes</option><option>Partial</option><option>No</option></select>
+          </div>
+          <div>
+            <label for="dietSugar">No added sugar</label>
+            <select id="dietSugar"><option>Yes</option><option>No</option></select>
+          </div>
+          <div>
+            <label for="dietLate">No late eating</label>
+            <select id="dietLate"><option>Yes</option><option>No</option></select>
+          </div>
+          <div>
+            <label for="dietJunk">No junk food / snacks</label>
+            <select id="dietJunk"><option>Yes</option><option>No</option></select>
+          </div>
+          <div>
+            <label for="dietWater">Water (glasses)</label>
+            <input id="dietWater" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="dietProduce">Fruit/veg servings</label>
+            <input id="dietProduce" type="number" min="0" step="1" />
+          </div>
+        </div>
+        <label for="dietNotes">Diet notes</label>
+        <textarea id="dietNotes"></textarea>
+      </div>
+
+      <div class="card">
+        <h3>Exercise</h3>
+        <div class="row4">
+          <div>
+            <label for="exCardio">Cardio</label>
+            <input id="exCardio" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="exWalking">Walking</label>
+            <input id="exWalking" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="exStrength">Strength</label>
+            <input id="exStrength" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="exYoga">Yoga</label>
+            <input id="exYoga" type="number" min="0" step="1" />
+          </div>
+        </div>
+        <label for="exNotes">Exercise notes</label>
+        <textarea id="exNotes"></textarea>
+      </div>
+
+      <div class="card">
+        <h3>Prayer</h3>
+        <div class="row3">
+          <div>
+            <label for="prayerMinutes">Prayer minutes</label>
+            <input id="prayerMinutes" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="morningPrayer">Morning prayer</label>
+            <select id="morningPrayer"><option>No</option><option>Yes</option></select>
+          </div>
+          <div>
+            <label for="eveningPrayer">Evening prayer</label>
+            <select id="eveningPrayer"><option>No</option><option>Yes</option></select>
+          </div>
+          <div>
+            <label for="examen">Examen</label>
+            <select id="examen"><option>No</option><option>Partial</option><option>Complete</option></select>
+          </div>
+          <div>
+            <label for="scripture">Scripture</label>
+            <select id="scripture"><option>No</option><option>Yes</option></select>
+          </div>
+          <div>
+            <label for="rosary">Rosary</label>
+            <select id="rosary"><option>Not prayed</option><option>Partial</option><option>Complete</option></select>
+          </div>
+          <div>
+            <label for="meditation">Meditation / contemplation</label>
+            <select id="meditation"><option>No</option><option>Yes</option></select>
+          </div>
+        </div>
+        <label for="prayerNotes">Prayer notes</label>
+        <textarea id="prayerNotes"></textarea>
+      </div>
+
+      <div class="card">
+        <h3>Study</h3>
+        <div class="row3">
+          <div>
+            <label for="studyPlanned">Planned minutes</label>
+            <input id="studyPlanned" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="studyActual">Actual minutes</label>
+            <input id="studyActual" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="studyFocus">Focus</label>
+            <select id="studyFocus"><option value="">—</option><option>Low</option><option>Medium</option><option>High</option></select>
+          </div>
+          <div>
+            <label for="studyTopic">Topic / subject</label>
+            <input id="studyTopic" type="text" />
+          </div>
+          <div>
+            <label for="studyType">Study type</label>
+            <select id="studyType"><option>Reading</option><option>Lecture</option><option>Writing</option><option>Outlining</option><option>Memorization</option><option>Review</option><option>Research</option></select>
+          </div>
+          <div>
+            <label for="studyPages">Pages / units completed</label>
+            <input id="studyPages" type="text" />
+          </div>
+          <div>
+            <label for="studyTask">Task / assignment completed</label>
+            <select id="studyTask"><option>No</option><option>Partial</option><option>Yes</option></select>
+          </div>
+          <div>
+            <label for="studyComp">Comprehension</label>
+            <select id="studyComp"><option value="">—</option><option>Low</option><option>Medium</option><option>High</option></select>
+          </div>
+          <div>
+            <label for="studyDistract">Distraction level</label>
+            <select id="studyDistract"><option value="">—</option><option>Low</option><option>Medium</option><option>High</option></select>
+          </div>
+        </div>
+        <label for="studyNotes">Study notes</label>
+        <textarea id="studyNotes"></textarea>
+      </div>
+
+      <div class="card">
+        <h3>Sleep</h3>
+        <div class="row3">
+          <div>
+            <label for="sleepBedtime">Bedtime</label>
+            <input id="sleepBedtime" type="time" />
+          </div>
+          <div>
+            <label for="sleepWake">Wake time</label>
+            <input id="sleepWake" type="time" />
+          </div>
+          <div>
+            <label for="sleepHours">Hours slept</label>
+            <input id="sleepHours" type="number" min="0" step="0.25" />
+          </div>
+          <div>
+            <label for="sleepQuality">Sleep quality</label>
+            <select id="sleepQuality"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </div>
+          <div>
+            <label for="sleepWinddown">Wind-down completed</label>
+            <select id="sleepWinddown"><option>No</option><option>Yes</option></select>
+          </div>
+          <div>
+            <label for="sleepInterruptions">Interruptions</label>
+            <input id="sleepInterruptions" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="sleepOnset">Time to fall asleep (min)</label>
+            <input id="sleepOnset" type="number" min="0" step="1" />
+          </div>
+        </div>
+        <label for="sleepNotes">Sleep notes</label>
+        <textarea id="sleepNotes"></textarea>
+      </div>
+    </section>
+
+    <section id="weekly" class="tab">
+      <div class="card">
+        <h2>Weekly review</h2>
+        <div class="footer-note">Uses the selected date as the end of the current 7-day window.</div>
+      </div>
+      <div class="grid">
+        <div class="card" id="weeklySummary"></div>
+        <div class="card" id="weeklyCompliance"></div>
+      </div>
+      <div class="card" id="weeklyBreakdown"></div>
+    </section>
+
+    <section id="monthly" class="tab">
+      <div class="card">
+        <h2>Monthly review</h2>
+        <div class="footer-note">Uses the selected date as the end of the current 30-day window.</div>
+      </div>
+      <div class="grid">
+        <div class="card" id="monthlySummary"></div>
+        <div class="card" id="monthlyCompliance"></div>
+      </div>
+      <div class="card" id="monthlyBreakdown"></div>
+    </section>
+
+    <section id="exercise" class="tab">
+      <div class="card" id="exerciseAnalytics"></div>
+    </section>
+
+    <section id="prayer" class="tab">
+      <div class="card" id="prayerAnalytics"></div>
+    </section>
+
+    <section id="settings" class="tab">
+      <div class="card">
+        <h2>Targets & settings</h2>
+        <div class="row3">
+          <div>
+            <label for="targetExerciseDaily">Exercise threshold (daily min)</label>
+            <input id="targetExerciseDaily" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetExerciseDays">Exercise qualifying days / week</label>
+            <input id="targetExerciseDays" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetCardioWeekly">Cardio weekly target</label>
+            <input id="targetCardioWeekly" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetWalkingWeekly">Walking weekly target</label>
+            <input id="targetWalkingWeekly" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetStrengthWeekly">Strength weekly target</label>
+            <input id="targetStrengthWeekly" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetYogaWeekly">Yoga weekly target</label>
+            <input id="targetYogaWeekly" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetPrayerMinutes">Prayer minutes target</label>
+            <input id="targetPrayerMinutes" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetRosaryWeekly">Rosary target days / week</label>
+            <input id="targetRosaryWeekly" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetStudyDaily">Study daily target</label>
+            <input id="targetStudyDaily" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetStudyWeekly">Study weekly target</label>
+            <input id="targetStudyWeekly" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label for="targetSleepMin">Minimum sleep hours</label>
+            <input id="targetSleepMin" type="number" min="0" step="0.25" />
+          </div>
+          <div>
+            <label for="targetSleepIdeal">Ideal sleep hours</label>
+            <input id="targetSleepIdeal" type="number" min="0" step="0.25" />
+          </div>
+          <div>
+            <label for="targetBedtime">Target bedtime</label>
+            <input id="targetBedtime" type="time" />
+          </div>
+          <div>
+            <label for="targetNoJunkWeekly">No junk target days / week</label>
+            <input id="targetNoJunkWeekly" type="number" min="0" step="1" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" type="button" id="saveSettingsBtn">Save settings</button>
+          <button class="secondary" type="button" id="resetSettingsBtn">Reset defaults</button>
+        </div>
+        <div class="footer-note" id="settingsStatus"></div>
+      </div>
+    </section>
+
+    <section id="sync" class="tab">
+      <div class="card">
+        <h2>Sync</h2>
+        <div class="sync-box">
+          <label for="firebaseConfig">Firebase web config JSON</label>
+          <textarea id="firebaseConfig" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+          <div class="actions">
+            <button class="secondary" type="button" id="saveFirebaseBtn">Save Firebase config</button>
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label for="syncEmail">Email</label>
+            <input id="syncEmail" type="email" />
+          </div>
+          <div>
+            <label for="syncPassword">Password</label>
+            <input id="syncPassword" type="password" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="secondary" type="button" id="createAccountBtn">Create account</button>
+          <button class="primary" type="button" id="signInBtn">Sign in</button>
+          <button class="secondary" type="button" id="signOutBtn">Sign out</button>
+        </div>
+        <div class="footer-note" id="syncStatus">Sync not configured.</div>
+        <div class="footer-note">After sign-in, the app auto-loads your cloud data and auto-syncs on save. Use the same email/password on each device.</div>
+      </div>
+    </section>
+  </main>
+
+<script type="module">
+  const STORAGE_PREFIX = 'habit-entry-';
+  const SETTINGS_KEY = 'habit-settings-v1';
+  const FIREBASE_CONFIG_KEY = 'habit-firebase-config-v1';
+
+  const DEFAULT_SETTINGS = {
+    exerciseDaily: 120,
+    exerciseDays: 5,
+    cardioWeekly: 180,
+    walkingWeekly: 150,
+    strengthWeekly: 120,
+    yogaWeekly: 150,
+    prayerMinutes: 20,
+    rosaryWeekly: 7,
+    studyDaily: 45,
+    studyWeekly: 300,
+    sleepMin: 7,
+    sleepIdeal: 7.5,
+    bedtime: '22:30',
+    noJunkWeekly: 6
+  };
+
+  let settings = loadSettings();
+  let firebaseFns = null;
+  let firebaseApp = null;
+  let firebaseAuth = null;
+  let firestoreDb = null;
+  let currentUser = null;
+  let authReady = false;
+
+  const byId = (id) => document.getElementById(id);
+
+  // Tabs
+  document.querySelectorAll('#tabNav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#tabNav button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      byId(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  function todayLocalISO() {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60000);
+    return local.toISOString().slice(0,10);
+  }
+
+  byId('entryDate').value = todayLocalISO();
+  byId('dashTodayDate').textContent = todayLocalISO();
+
+  byId('entryDate').addEventListener('change', async () => {
+    byId('dashTodayDate').textContent = byId('entryDate').value;
+    await loadEntryToForm(byId('entryDate').value);
+    renderAll();
+  });
+
+  byId('saveDayBtn').addEventListener('click', saveDay);
+  byId('reloadDayBtn').addEventListener('click', async () => {
+    await loadEntryToForm(byId('entryDate').value);
+    setSaveStatus('Reloaded selected date.');
+  });
+  byId('clearDayBtn').addEventListener('click', () => {
+    clearForm();
+    setSaveStatus('Cleared current form.');
+  });
+  byId('saveSettingsBtn').addEventListener('click', () => {
+    settings = collectSettingsFromForm();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    byId('settingsStatus').textContent = 'Settings saved.';
+    renderAll();
+    autoSyncAllEntries();
+  });
+  byId('resetSettingsBtn').addEventListener('click', () => {
+    settings = structuredClone(DEFAULT_SETTINGS);
+    populateSettings();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    byId('settingsStatus').textContent = 'Settings reset to defaults.';
+    renderAll();
+  });
+
+  byId('saveFirebaseBtn').addEventListener('click', async () => {
+    const raw = byId('firebaseConfig').value.trim();
+    if (!raw) {
+      setSyncStatus('Paste your Firebase config JSON first.');
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(parsed));
+      setSyncStatus('Firebase config saved. Initializing…');
+      await initFirebaseFromSavedConfig();
+    } catch {
+      setSyncStatus('Firebase config is not valid JSON.');
+    }
+  });
+  byId('createAccountBtn').addEventListener('click', createSyncAccount);
+  byId('signInBtn').addEventListener('click', signInSync);
+  byId('signOutBtn').addEventListener('click', signOutSync);
+
+  function structuredClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function loadSettings() {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return structuredClone(DEFAULT_SETTINGS);
+    try {
+      return { ...structuredClone(DEFAULT_SETTINGS), ...JSON.parse(raw) };
+    } catch {
+      return structuredClone(DEFAULT_SETTINGS);
+    }
+  }
+
+  function populateSettings() {
+    byId('targetExerciseDaily').value = settings.exerciseDaily;
+    byId('targetExerciseDays').value = settings.exerciseDays;
+    byId('targetCardioWeekly').value = settings.cardioWeekly;
+    byId('targetWalkingWeekly').value = settings.walkingWeekly;
+    byId('targetStrengthWeekly').value = settings.strengthWeekly;
+    byId('targetYogaWeekly').value = settings.yogaWeekly;
+    byId('targetPrayerMinutes').value = settings.prayerMinutes;
+    byId('targetRosaryWeekly').value = settings.rosaryWeekly;
+    byId('targetStudyDaily').value = settings.studyDaily;
+    byId('targetStudyWeekly').value = settings.studyWeekly;
+    byId('targetSleepMin').value = settings.sleepMin;
+    byId('targetSleepIdeal').value = settings.sleepIdeal;
+    byId('targetBedtime').value = settings.bedtime;
+    byId('targetNoJunkWeekly').value = settings.noJunkWeekly;
+  }
+
+  function collectSettingsFromForm() {
+    return {
+      exerciseDaily: numVal('targetExerciseDaily'),
+      exerciseDays: numVal('targetExerciseDays'),
+      cardioWeekly: numVal('targetCardioWeekly'),
+      walkingWeekly: numVal('targetWalkingWeekly'),
+      strengthWeekly: numVal('targetStrengthWeekly'),
+      yogaWeekly: numVal('targetYogaWeekly'),
+      prayerMinutes: numVal('targetPrayerMinutes'),
+      rosaryWeekly: numVal('targetRosaryWeekly'),
+      studyDaily: numVal('targetStudyDaily'),
+      studyWeekly: numVal('targetStudyWeekly'),
+      sleepMin: floatVal('targetSleepMin'),
+      sleepIdeal: floatVal('targetSleepIdeal'),
+      bedtime: byId('targetBedtime').value || DEFAULT_SETTINGS.bedtime,
+      noJunkWeekly: numVal('targetNoJunkWeekly')
+    };
+  }
+
+  function numVal(id) { return Number(byId(id).value || 0); }
+  function floatVal(id) { return Number(byId(id).value || 0); }
+
+  function entryKey(date) { return `${STORAGE_PREFIX}${date}`; }
+
+  function collectFormEntry() {
+    const exCardio = numVal('exCardio');
+    const exWalking = numVal('exWalking');
+    const exStrength = numVal('exStrength');
+    const exYoga = numVal('exYoga');
+    return {
+      date: byId('entryDate').value,
+      updatedAt: Date.now(),
+      overallNotes: byId('overallNotes').value,
+      diet: {
+        plan: byId('dietPlan').value,
+        noSugar: byId('dietSugar').value,
+        noLateEating: byId('dietLate').value,
+        noJunk: byId('dietJunk').value,
+        water: numVal('dietWater'),
+        produce: numVal('dietProduce'),
+        notes: byId('dietNotes').value
+      },
+      exercise: {
+        cardio: exCardio,
+        walking: exWalking,
+        strength: exStrength,
+        yoga: exYoga,
+        total: exCardio + exWalking + exStrength + exYoga,
+        notes: byId('exNotes').value
+      },
+      prayer: {
+        minutes: numVal('prayerMinutes'),
+        morning: byId('morningPrayer').value,
+        evening: byId('eveningPrayer').value,
+        examen: byId('examen').value,
+        scripture: byId('scripture').value,
+        rosary: byId('rosary').value,
+        meditation: byId('meditation').value,
+        notes: byId('prayerNotes').value
+      },
+      study: {
+        planned: numVal('studyPlanned'),
+        actual: numVal('studyActual'),
+        focus: byId('studyFocus').value,
+        topic: byId('studyTopic').value,
+        type: byId('studyType').value,
+        pages: byId('studyPages').value,
+        task: byId('studyTask').value,
+        comprehension: byId('studyComp').value,
+        distraction: byId('studyDistract').value,
+        notes: byId('studyNotes').value
+      },
+      sleep: {
+        bedtime: byId('sleepBedtime').value,
+        wake: byId('sleepWake').value,
+        hours: floatVal('sleepHours'),
+        quality: byId('sleepQuality').value,
+        winddown: byId('sleepWinddown').value,
+        interruptions: numVal('sleepInterruptions'),
+        onset: numVal('sleepOnset'),
+        notes: byId('sleepNotes').value
+      }
+    };
+  }
+
+  function populateForm(entry) {
+    clearForm(false);
+    byId('entryDate').value = entry.date || todayLocalISO();
+    byId('overallNotes').value = entry.overallNotes || '';
+
+    byId('dietPlan').value = entry.diet?.plan || 'Yes';
+    byId('dietSugar').value = entry.diet?.noSugar || 'Yes';
+    byId('dietLate').value = entry.diet?.noLateEating || 'Yes';
+    byId('dietJunk').value = entry.diet?.noJunk || 'Yes';
+    byId('dietWater').value = entry.diet?.water ?? '';
+    byId('dietProduce').value = entry.diet?.produce ?? '';
+    byId('dietNotes').value = entry.diet?.notes || '';
+
+    byId('exCardio').value = entry.exercise?.cardio ?? '';
+    byId('exWalking').value = entry.exercise?.walking ?? '';
+    byId('exStrength').value = entry.exercise?.strength ?? '';
+    byId('exYoga').value = entry.exercise?.yoga ?? '';
+    byId('exNotes').value = entry.exercise?.notes || '';
+
+    byId('prayerMinutes').value = entry.prayer?.minutes ?? '';
+    byId('morningPrayer').value = entry.prayer?.morning || 'No';
+    byId('eveningPrayer').value = entry.prayer?.evening || 'No';
+    byId('examen').value = entry.prayer?.examen || 'No';
+    byId('scripture').value = entry.prayer?.scripture || 'No';
+    byId('rosary').value = entry.prayer?.rosary || 'Not prayed';
+    byId('meditation').value = entry.prayer?.meditation || 'No';
+    byId('prayerNotes').value = entry.prayer?.notes || '';
+
+    byId('studyPlanned').value = entry.study?.planned ?? '';
+    byId('studyActual').value = entry.study?.actual ?? '';
+    byId('studyFocus').value = entry.study?.focus || '';
+    byId('studyTopic').value = entry.study?.topic || '';
+    byId('studyType').value = entry.study?.type || 'Reading';
+    byId('studyPages').value = entry.study?.pages || '';
+    byId('studyTask').value = entry.study?.task || 'No';
+    byId('studyComp').value = entry.study?.comprehension || '';
+    byId('studyDistract').value = entry.study?.distraction || '';
+    byId('studyNotes').value = entry.study?.notes || '';
+
+    byId('sleepBedtime').value = entry.sleep?.bedtime || '';
+    byId('sleepWake').value = entry.sleep?.wake || '';
+    byId('sleepHours').value = entry.sleep?.hours ?? '';
+    byId('sleepQuality').value = entry.sleep?.quality || '';
+    byId('sleepWinddown').value = entry.sleep?.winddown || 'No';
+    byId('sleepInterruptions').value = entry.sleep?.interruptions ?? '';
+    byId('sleepOnset').value = entry.sleep?.onset ?? '';
+    byId('sleepNotes').value = entry.sleep?.notes || '';
+  }
+
+  function clearForm(clearDate = true) {
+    if (clearDate) byId('entryDate').value = todayLocalISO();
+    byId('overallNotes').value = '';
+    byId('dietPlan').value = 'Yes';
+    byId('dietSugar').value = 'Yes';
+    byId('dietLate').value = 'Yes';
+    byId('dietJunk').value = 'Yes';
+    byId('dietWater').value = '';
+    byId('dietProduce').value = '';
+    byId('dietNotes').value = '';
+    byId('exCardio').value = '';
+    byId('exWalking').value = '';
+    byId('exStrength').value = '';
+    byId('exYoga').value = '';
+    byId('exNotes').value = '';
+    byId('prayerMinutes').value = '';
+    byId('morningPrayer').value = 'No';
+    byId('eveningPrayer').value = 'No';
+    byId('examen').value = 'No';
+    byId('scripture').value = 'No';
+    byId('rosary').value = 'Not prayed';
+    byId('meditation').value = 'No';
+    byId('prayerNotes').value = '';
+    byId('studyPlanned').value = '';
+    byId('studyActual').value = '';
+    byId('studyFocus').value = '';
+    byId('studyTopic').value = '';
+    byId('studyType').value = 'Reading';
+    byId('studyPages').value = '';
+    byId('studyTask').value = 'No';
+    byId('studyComp').value = '';
+    byId('studyDistract').value = '';
+    byId('studyNotes').value = '';
+    byId('sleepBedtime').value = '';
+    byId('sleepWake').value = '';
+    byId('sleepHours').value = '';
+    byId('sleepQuality').value = '';
+    byId('sleepWinddown').value = 'No';
+    byId('sleepInterruptions').value = '';
+    byId('sleepOnset').value = '';
+    byId('sleepNotes').value = '';
+  }
+
+  function saveLocalEntry(entry) {
+    localStorage.setItem(entryKey(entry.date), JSON.stringify(entry));
+  }
+
+  function getLocalEntry(date) {
+    const raw = localStorage.getItem(entryKey(date));
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  function getAllLocalEntries() {
+    return Object.keys(localStorage)
+      .filter(k => k.startsWith(STORAGE_PREFIX))
+      .map(k => {
+        try { return JSON.parse(localStorage.getItem(k)); } catch { return null; }
+      })
+      .filter(Boolean)
+      .sort((a,b) => a.date.localeCompare(b.date));
+  }
+
+  async function saveDay() {
+    const entry = collectFormEntry();
+    saveLocalEntry(entry);
+    setSaveStatus('Saved locally.');
+    await autoSyncEntry(entry);
+    renderAll();
+  }
+
+  async function loadEntryToForm(date) {
+    const localEntry = getLocalEntry(date);
+    let finalEntry = localEntry;
+    if (currentUser && firestoreDb) {
+      const cloudEntry = await getCloudEntry(date);
+      if (cloudEntry && (!localEntry || (cloudEntry.updatedAt || 0) > (localEntry.updatedAt || 0))) {
+        finalEntry = cloudEntry;
+        saveLocalEntry(cloudEntry);
+      }
+    }
+    if (finalEntry) {
+      populateForm(finalEntry);
+    } else {
+      clearForm(false);
+      byId('entryDate').value = date;
+    }
+  }
+
+  function setSaveStatus(msg) {
+    byId('saveStatus').textContent = msg;
+  }
+  function setSyncStatus(msg) {
+    byId('syncStatus').textContent = msg;
+  }
+
+  function windowEntries(days) {
+    const end = new Date(byId('entryDate').value || todayLocalISO());
+    const start = new Date(end);
+    start.setDate(start.getDate() - (days - 1));
+    return getAllLocalEntries().filter(e => e.date >= isoDate(start) && e.date <= isoDate(end));
+  }
+
+  function isoDate(d) {
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0,10);
+  }
+
+  function ratio(val, target) {
+    if (!target || target <= 0) return 0;
+    return Math.max(0, Math.min(1, val / target));
+  }
+
+  function focusNum(val) {
+    return ({ Low: 1, Medium: 2, High: 3 }[val] || 0);
+  }
+
+  function prayerPracticeYes(val) {
+    return val === 'Yes' || val === 'Complete';
+  }
+
+  function timeOnOrBefore(actual, target) {
+    if (!actual || !target) return false;
+    return actual <= target;
+  }
+
+  function dailyScores(entry) {
+    if (!entry) return { total: 0, items: {} };
+    const diet = (
+      (entry.diet.plan === 'Yes' ? 0.4 : entry.diet.plan === 'Partial' ? 0.2 : 0) +
+      (entry.diet.noSugar === 'Yes' ? 0.2 : 0) +
+      (entry.diet.noLateEating === 'Yes' ? 0.2 : 0) +
+      (entry.diet.noJunk === 'Yes' ? 0.2 : 0)
+    ) * 100;
+
+    const exScore = (
+      ratio(entry.exercise.total, settings.exerciseDaily) * 0.45 +
+      ratio(entry.exercise.cardio, settings.cardioWeekly / 7 || 1) * 0.15 +
+      ratio(entry.exercise.walking, settings.walkingWeekly / 7 || 1) * 0.15 +
+      ratio(entry.exercise.strength, settings.strengthWeekly / 7 || 1) * 0.125 +
+      ratio(entry.exercise.yoga, settings.yogaWeekly / 7 || 1) * 0.125
+    ) * 100;
+
+    const prayer = (
+      ratio(entry.prayer.minutes, settings.prayerMinutes) * 0.35 +
+      (entry.prayer.morning === 'Yes' ? 0.15 : 0) +
+      (entry.prayer.evening === 'Yes' ? 0.1 : 0) +
+      ((entry.prayer.rosary === 'Complete' ? 0.2 : entry.prayer.rosary === 'Partial' ? 0.1 : 0)) +
+      (entry.prayer.scripture === 'Yes' ? 0.1 : 0) +
+      (entry.prayer.meditation === 'Yes' ? 0.1 : 0)
+    ) * 100;
+
+    const study = (
+      ratio(entry.study.actual, settings.studyDaily) * 0.45 +
+      (focusNum(entry.study.focus) / 3) * 0.2 +
+      ((entry.study.task === 'Yes' ? 1 : entry.study.task === 'Partial' ? 0.5 : 0) * 0.15) +
+      (focusNum(entry.study.comprehension) / 3) * 0.1 +
+      ((3 - focusNum(entry.study.distraction) + 1) / 3) * 0.1
+    ) * 100;
+
+    const qualityNum = Number(entry.sleep.quality || 0);
+    const sleep = (
+      ratio(entry.sleep.hours, settings.sleepIdeal) * 0.5 +
+      (entry.sleep.hours >= settings.sleepMin ? 0.2 : 0) +
+      (timeOnOrBefore(entry.sleep.bedtime, settings.bedtime) ? 0.15 : 0) +
+      ((qualityNum / 5) * 0.1) +
+      (entry.sleep.winddown === 'Yes' ? 0.05 : 0)
+    ) * 100;
+
+    const items = { diet, exercise: exScore, prayer, study, sleep };
+    const total = Object.values(items).reduce((a,b) => a+b, 0) / 5;
+    return { total, items };
+  }
+
+  function pct(n) { return `${Math.round(n)}%`; }
+  function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+  function sumBy(entries, getter) { return entries.reduce((s,e)=>s + (getter(e) || 0), 0); }
+  function countBy(entries, pred) { return entries.filter(pred).length; }
+
+  function renderAll() {
+    renderDashboard();
+    renderWeekly();
+    renderMonthly();
+    renderExerciseAnalytics();
+    renderPrayerAnalytics();
+  }
+
+  function renderDashboard() {
+    const selected = getLocalEntry(byId('entryDate').value);
+    const week = windowEntries(7);
+    const month = windowEntries(30);
+    const todayScore = dailyScores(selected);
+    const weekExerciseDays = countBy(week, e => e.exercise.total >= settings.exerciseDaily);
+    const weekRosaryComplete = countBy(week, e => e.prayer.rosary === 'Complete');
+    const weekRosaryPartial = countBy(week, e => e.prayer.rosary === 'Partial');
+    const weekSleepAvg = avg(week.map(e => e.sleep.hours));
+    const monthScores = month.map(e => dailyScores(e).total);
+
+    byId('dashTodayScore').textContent = pct(todayScore.total);
+    byId('dashTodayDate').textContent = byId('entryDate').value;
+    byId('dashExerciseToday').textContent = `${selected?.exercise.total || 0} min`;
+    byId('dashExerciseBar').style.width = `${ratio(selected?.exercise.total || 0, settings.exerciseDaily) * 100}%`;
+    byId('dashStudyToday').textContent = `${selected?.study.actual || 0} min`;
+    byId('dashStudyBar').style.width = `${ratio(selected?.study.actual || 0, settings.studyDaily) * 100}%`;
+    byId('dashSleepToday').textContent = `${selected?.sleep.hours || 0} hr`;
+    byId('dashSleepBar').style.width = `${ratio(selected?.sleep.hours || 0, settings.sleepIdeal) * 100}%`;
+
+    byId('dashWeekExercise').textContent = `${weekExerciseDays}/${settings.exerciseDays}`;
+    byId('dashWeekRosary').textContent = `Rosary: ${weekRosaryComplete} complete / ${weekRosaryPartial} partial`;
+    byId('dashWeekSleep').textContent = `Avg sleep: ${weekSleepAvg.toFixed(1)} hr`;
+    byId('dashWeekDiet').textContent = `No junk days: ${countBy(week, e => e.diet.noJunk === 'Yes')}`;
+    byId('dashWeekStudy').textContent = `Study: ${sumBy(week, e => e.study.actual)} min`;
+
+    byId('dashMonthScore').textContent = pct(avg(monthScores));
+    byId('dashMonthExercise').textContent = `Exercise total: ${sumBy(month, e => e.exercise.total)} min`;
+    byId('dashMonthPrayer').textContent = `Rosary complete: ${countBy(month, e => e.prayer.rosary === 'Complete')}`;
+    byId('dashMonthStudy').textContent = `Study total: ${sumBy(month, e => e.study.actual)} min`;
+    byId('dashMonthSleep').textContent = `Avg sleep: ${avg(month.map(e => e.sleep.hours)).toFixed(1)} hr`;
+
+    byId('todaySnapshot').innerHTML = selected ? `
+      <div class="pill">Diet: ${pct(todayScore.items.diet)}</div>
+      <div class="pill">Exercise: ${pct(todayScore.items.exercise)}</div>
+      <div class="pill">Prayer: ${pct(todayScore.items.prayer)}</div>
+      <div class="pill">Study: ${pct(todayScore.items.study)}</div>
+      <div class="pill">Sleep: ${pct(todayScore.items.sleep)}</div>
+      <div class="footer-note">Rosary: ${selected.prayer.rosary}; Sleep quality: ${selected.sleep.quality || '—'}; Study focus: ${selected.study.focus || '—'}</div>
+    ` : `<div class="muted">No saved entry for the selected date yet.</div>`;
+
+    const signals = [];
+    signals.push(`<div class="pill">Exercise qualifying days this week: ${weekExerciseDays}/${settings.exerciseDays}</div>`);
+    signals.push(`<div class="pill">Weekly cardio: ${sumBy(week, e => e.exercise.cardio)}/${settings.cardioWeekly}</div>`);
+    signals.push(`<div class="pill">Weekly study: ${sumBy(week, e => e.study.actual)}/${settings.studyWeekly}</div>`);
+    signals.push(`<div class="pill">No junk days this week: ${countBy(week, e => e.diet.noJunk === 'Yes')}/${settings.noJunkWeekly}</div>`);
+    signals.push(`<div class="pill">Sleep minimum met: ${countBy(week, e => e.sleep.hours >= settings.sleepMin)}/7</div>`);
+    signals.push(`<div class="pill">Bedtime target met: ${countBy(week, e => timeOnOrBefore(e.sleep.bedtime, settings.bedtime))}/7</div>`);
+    byId('keySignals').innerHTML = signals.join('');
+  }
+
+  function renderWeekly() {
+    const week = windowEntries(7);
+    const scores = week.map(e => dailyScores(e));
+    const catAvg = {
+      diet: avg(scores.map(s => s.items.diet)),
+      exercise: avg(scores.map(s => s.items.exercise)),
+      prayer: avg(scores.map(s => s.items.prayer)),
+      study: avg(scores.map(s => s.items.study)),
+      sleep: avg(scores.map(s => s.items.sleep))
+    };
+    byId('weeklySummary').innerHTML = `
+      <h3>Weekly summary</h3>
+      <div class="pill">Entries: ${week.length}</div>
+      <div class="pill">Exercise total: ${sumBy(week, e => e.exercise.total)} min</div>
+      <div class="pill">120+ days: ${countBy(week, e => e.exercise.total >= settings.exerciseDaily)}</div>
+      <div class="pill">Study total: ${sumBy(week, e => e.study.actual)} min</div>
+      <div class="pill">Avg sleep: ${avg(week.map(e => e.sleep.hours)).toFixed(1)} hr</div>
+      <div class="pill">Rosary complete: ${countBy(week, e => e.prayer.rosary === 'Complete')}</div>
+      <div class="pill">Rosary partial: ${countBy(week, e => e.prayer.rosary === 'Partial')}</div>
+    `;
+    byId('weeklyCompliance').innerHTML = `
+      <h3>Weekly compliance</h3>
+      ${progressRow('Diet', catAvg.diet)}
+      ${progressRow('Exercise', catAvg.exercise)}
+      ${progressRow('Prayer', catAvg.prayer)}
+      ${progressRow('Study', catAvg.study)}
+      ${progressRow('Sleep', catAvg.sleep)}
+    `;
+    byId('weeklyBreakdown').innerHTML = `
+      <h3>Weekly breakdown</h3>
+      <table>
+        <tr><th>Area</th><th>Value</th><th>Target</th></tr>
+        <tr><td>Cardio</td><td>${sumBy(week, e => e.exercise.cardio)} min</td><td>${settings.cardioWeekly}</td></tr>
+        <tr><td>Walking</td><td>${sumBy(week, e => e.exercise.walking)} min</td><td>${settings.walkingWeekly}</td></tr>
+        <tr><td>Strength</td><td>${sumBy(week, e => e.exercise.strength)} min</td><td>${settings.strengthWeekly}</td></tr>
+        <tr><td>Yoga</td><td>${sumBy(week, e => e.exercise.yoga)} min</td><td>${settings.yogaWeekly}</td></tr>
+        <tr><td>Prayer minutes</td><td>${sumBy(week, e => e.prayer.minutes)} min</td><td>${settings.prayerMinutes * 7}</td></tr>
+        <tr><td>Morning prayer</td><td>${countBy(week, e => e.prayer.morning === 'Yes')} days</td><td>—</td></tr>
+        <tr><td>Evening prayer</td><td>${countBy(week, e => e.prayer.evening === 'Yes')} days</td><td>—</td></tr>
+        <tr><td>Meditation/contemplation</td><td>${countBy(week, e => e.prayer.meditation === 'Yes')} days</td><td>—</td></tr>
+        <tr><td>Study</td><td>${sumBy(week, e => e.study.actual)} min</td><td>${settings.studyWeekly}</td></tr>
+        <tr><td>Average focus</td><td>${avg(week.map(e => focusNum(e.study.focus))).toFixed(2)} / 3</td><td>—</td></tr>
+        <tr><td>Sleep minimum met</td><td>${countBy(week, e => e.sleep.hours >= settings.sleepMin)} nights</td><td>7</td></tr>
+        <tr><td>No junk</td><td>${countBy(week, e => e.diet.noJunk === 'Yes')} days</td><td>${settings.noJunkWeekly}</td></tr>
+      </table>
+    `;
+  }
+
+  function renderMonthly() {
+    const month = windowEntries(30);
+    const scores = month.map(e => dailyScores(e));
+    const catAvg = {
+      diet: avg(scores.map(s => s.items.diet)),
+      exercise: avg(scores.map(s => s.items.exercise)),
+      prayer: avg(scores.map(s => s.items.prayer)),
+      study: avg(scores.map(s => s.items.study)),
+      sleep: avg(scores.map(s => s.items.sleep))
+    };
+    const strongest = Object.entries(catAvg).sort((a,b) => b[1]-a[1])[0];
+    const weakest = Object.entries(catAvg).sort((a,b) => a[1]-b[1])[0];
+    byId('monthlySummary').innerHTML = `
+      <h3>Monthly summary</h3>
+      <div class="pill">Entries: ${month.length}</div>
+      <div class="pill">Exercise total: ${sumBy(month, e => e.exercise.total)} min</div>
+      <div class="pill">Study total: ${sumBy(month, e => e.study.actual)} min</div>
+      <div class="pill">Avg sleep: ${avg(month.map(e => e.sleep.hours)).toFixed(1)} hr</div>
+      <div class="pill">Rosary complete: ${countBy(month, e => e.prayer.rosary === 'Complete')}</div>
+      <div class="pill">No junk days: ${countBy(month, e => e.diet.noJunk === 'Yes')}</div>
+      <div class="footer-note">Strongest: ${strongest ? strongest[0] : '—'} • Weakest: ${weakest ? weakest[0] : '—'}</div>
+    `;
+    byId('monthlyCompliance').innerHTML = `
+      <h3>Monthly compliance</h3>
+      ${progressRow('Diet', catAvg.diet)}
+      ${progressRow('Exercise', catAvg.exercise)}
+      ${progressRow('Prayer', catAvg.prayer)}
+      ${progressRow('Study', catAvg.study)}
+      ${progressRow('Sleep', catAvg.sleep)}
+    `;
+    byId('monthlyBreakdown').innerHTML = `
+      <h3>Monthly breakdown</h3>
+      <table>
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>Exercise threshold days</td><td>${countBy(month, e => e.exercise.total >= settings.exerciseDaily)}</td></tr>
+        <tr><td>Morning prayer days</td><td>${countBy(month, e => e.prayer.morning === 'Yes')}</td></tr>
+        <tr><td>Evening prayer days</td><td>${countBy(month, e => e.prayer.evening === 'Yes')}</td></tr>
+        <tr><td>Rosary partial days</td><td>${countBy(month, e => e.prayer.rosary === 'Partial')}</td></tr>
+        <tr><td>Meditation/contemplation days</td><td>${countBy(month, e => e.prayer.meditation === 'Yes')}</td></tr>
+        <tr><td>Study days</td><td>${countBy(month, e => e.study.actual > 0)}</td></tr>
+        <tr><td>Task completed days</td><td>${countBy(month, e => e.study.task === 'Yes')}</td></tr>
+        <tr><td>Sleep target bedtime met</td><td>${countBy(month, e => timeOnOrBefore(e.sleep.bedtime, settings.bedtime))}</td></tr>
+        <tr><td>Wind-down completed</td><td>${countBy(month, e => e.sleep.winddown === 'Yes')}</td></tr>
+      </table>
+    `;
+  }
+
+  function renderExerciseAnalytics() {
+    const week = windowEntries(7);
+    byId('exerciseAnalytics').innerHTML = `
+      <h2>Exercise analytics</h2>
+      ${progressRow('Daily exercise threshold', ratio(countBy(week, e => e.exercise.total >= settings.exerciseDaily), settings.exerciseDays) * 100, `${countBy(week, e => e.exercise.total >= settings.exerciseDaily)}/${settings.exerciseDays} days`)}
+      ${progressRow('Cardio weekly', ratio(sumBy(week, e => e.exercise.cardio), settings.cardioWeekly) * 100, `${sumBy(week, e => e.exercise.cardio)}/${settings.cardioWeekly} min`)}
+      ${progressRow('Walking weekly', ratio(sumBy(week, e => e.exercise.walking), settings.walkingWeekly) * 100, `${sumBy(week, e => e.exercise.walking)}/${settings.walkingWeekly} min`)}
+      ${progressRow('Strength weekly', ratio(sumBy(week, e => e.exercise.strength), settings.strengthWeekly) * 100, `${sumBy(week, e => e.exercise.strength)}/${settings.strengthWeekly} min`)}
+      ${progressRow('Yoga weekly', ratio(sumBy(week, e => e.exercise.yoga), settings.yogaWeekly) * 100, `${sumBy(week, e => e.exercise.yoga)}/${settings.yogaWeekly} min`)}
+    `;
+  }
+
+  function renderPrayerAnalytics() {
+    const week = windowEntries(7);
+    const month = windowEntries(30);
+    byId('prayerAnalytics').innerHTML = `
+      <h2>Prayer analytics</h2>
+      <div class="pill">Prayer minutes this week: ${sumBy(week, e => e.prayer.minutes)}</div>
+      <div class="pill">Rosary complete this week: ${countBy(week, e => e.prayer.rosary === 'Complete')}</div>
+      <div class="pill">Rosary partial this week: ${countBy(week, e => e.prayer.rosary === 'Partial')}</div>
+      <div class="pill">Morning prayer this week: ${countBy(week, e => e.prayer.morning === 'Yes')}</div>
+      <div class="pill">Evening prayer this week: ${countBy(week, e => e.prayer.evening === 'Yes')}</div>
+      <div class="pill">Meditation this week: ${countBy(week, e => e.prayer.meditation === 'Yes')}</div>
+      <div class="pill">Rosary complete this month: ${countBy(month, e => e.prayer.rosary === 'Complete')}</div>
+    `;
+  }
+
+  function progressRow(label, value, overrideText = null) {
+    const num = typeof value === 'number' ? value : 0;
+    const clamped = Math.max(0, Math.min(100, num));
+    const text = overrideText || pct(clamped);
+    return `
+      <div class="progress-wrap">
+        <div class="progress-label"><span>${label}</span><span>${text}</span></div>
+        <div class="bar"><span style="width:${clamped}%"></span></div>
+      </div>
+    `;
+  }
+
+  // Firebase sync
+  async function loadFirebaseFns() {
+    if (firebaseFns) return firebaseFns;
+    const appMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const authMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const fsMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+    firebaseFns = { ...appMod, ...authMod, ...fsMod };
+    return firebaseFns;
+  }
+
+  async function initFirebaseFromSavedConfig() {
+    const raw = localStorage.getItem(FIREBASE_CONFIG_KEY);
+    if (!raw) return;
+    try {
+      const cfg = JSON.parse(raw);
+      byId('firebaseConfig').value = JSON.stringify(cfg, null, 2);
+      const f = await loadFirebaseFns();
+      if (!firebaseApp) {
+        firebaseApp = f.initializeApp(cfg);
+        firebaseAuth = f.getAuth(firebaseApp);
+        firestoreDb = f.getFirestore(firebaseApp);
+      }
+      f.onAuthStateChanged(firebaseAuth, async (user) => {
+        currentUser = user || null;
+        authReady = true;
+        if (currentUser) {
+          setSyncStatus(`Signed in as ${currentUser.email || currentUser.uid}. Auto-sync active.`);
+          await pullAllCloudEntries();
+          await loadEntryToForm(byId('entryDate').value);
+          renderAll();
+        } else {
+          setSyncStatus('Not signed in.');
+        }
+      });
+      setSyncStatus('Firebase initialized.');
+    } catch (err) {
+      console.error(err);
+      setSyncStatus('Could not initialize Firebase. Check the saved config.');
+    }
+  }
+
+  async function createSyncAccount() {
+    if (!firebaseAuth) await initFirebaseFromSavedConfig();
+    if (!firebaseAuth) return setSyncStatus('Save Firebase config first.');
+    const email = byId('syncEmail').value.trim();
+    const password = byId('syncPassword').value;
+    const f = await loadFirebaseFns();
+    try {
+      await f.createUserWithEmailAndPassword(firebaseAuth, email, password);
+      setSyncStatus('Account created and signed in.');
+    } catch (err) {
+      setSyncStatus(err.message);
+    }
+  }
+
+  async function signInSync() {
+    if (!firebaseAuth) await initFirebaseFromSavedConfig();
+    if (!firebaseAuth) return setSyncStatus('Save Firebase config first.');
+    const email = byId('syncEmail').value.trim();
+    const password = byId('syncPassword').value;
+    const f = await loadFirebaseFns();
+    try {
+      await f.signInWithEmailAndPassword(firebaseAuth, email, password);
+      setSyncStatus('Signed in. Pulling cloud data…');
+    } catch (err) {
+      setSyncStatus(err.message);
+    }
+  }
+
+  async function signOutSync() {
+    if (!firebaseAuth) return;
+    const f = await loadFirebaseFns();
+    await f.signOut(firebaseAuth);
+    currentUser = null;
+    setSyncStatus('Signed out.');
+  }
+
+  async function cloudDocRef(date) {
+    const f = await loadFirebaseFns();
+    return f.doc(firestoreDb, 'users', currentUser.uid, 'entries', date);
+  }
+
+  async function autoSyncEntry(entry) {
+    if (!currentUser || !firestoreDb) return;
+    try {
+      const f = await loadFirebaseFns();
+      await f.setDoc(await cloudDocRef(entry.date), entry, { merge: true });
+      setSaveStatus('Saved locally and synced to cloud.');
+      setSyncStatus('Cloud sync complete.');
+    } catch (err) {
+      console.error(err);
+      setSyncStatus(`Cloud sync failed: ${err.message}`);
+    }
+  }
+
+  async function autoSyncAllEntries() {
+    if (!currentUser || !firestoreDb) return;
+    const entries = getAllLocalEntries();
+    for (const entry of entries) {
+      await autoSyncEntry(entry);
+    }
+  }
+
+  async function getCloudEntry(date) {
+    if (!currentUser || !firestoreDb) return null;
+    try {
+      const f = await loadFirebaseFns();
+      const snap = await f.getDoc(await cloudDocRef(date));
+      return snap.exists() ? snap.data() : null;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }
+
+  async function pullAllCloudEntries() {
+    if (!currentUser || !firestoreDb) return;
+    try {
+      const f = await loadFirebaseFns();
+      const q = f.collection(firestoreDb, 'users', currentUser.uid, 'entries');
+      const snap = await f.getDocs(q);
+      snap.forEach(docSnap => {
+        const entry = docSnap.data();
+        if (!entry?.date) return;
+        const local = getLocalEntry(entry.date);
+        if (!local || (entry.updatedAt || 0) > (local.updatedAt || 0)) {
+          saveLocalEntry(entry);
+        }
+      });
+      setSyncStatus('Cloud data loaded.');
+    } catch (err) {
+      console.error(err);
+      setSyncStatus(`Cloud read failed: ${err.message}`);
+    }
+  }
+
+  // Init
+  populateSettings();
+  initFirebaseFromSavedConfig();
+  loadEntryToForm(byId('entryDate').value);
+  renderAll();
+</script>
+</body>
+</html>
