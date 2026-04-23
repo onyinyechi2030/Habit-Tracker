@@ -321,23 +321,43 @@
 
       <div class="card">
         <h3>Exercise</h3>
+        <div class="footer-note" style="margin-bottom:10px;">
+          Enter all exercise values in minutes. Example: 45 = 45 minutes.
+        </div>
         <div class="row4">
           <div>
-            <label for="exCardio">Cardio</label>
+            <label for="exCardio">Cardio (minutes)</label>
             <input id="exCardio" type="number" min="0" step="1" />
           </div>
           <div>
-            <label for="exWalking">Walking</label>
+            <label for="exWalking">Walking (minutes)</label>
             <input id="exWalking" type="number" min="0" step="1" />
           </div>
           <div>
-            <label for="exStrength">Strength</label>
+            <label for="exStrength">Strength (minutes)</label>
             <input id="exStrength" type="number" min="0" step="1" />
           </div>
           <div>
-            <label for="exYoga">Yoga</label>
+            <label for="exYoga">Yoga (minutes)</label>
             <input id="exYoga" type="number" min="0" step="1" />
           </div>
+        </div>
+        <div class="card" style="margin-top:12px; background:#f8fafc;">
+          <div class="row3">
+            <div>
+              <div class="section-title">Calculated total</div>
+              <div class="metric" id="exerciseTotalDisplay">0 min</div>
+            </div>
+            <div>
+              <div class="section-title">Daily target</div>
+              <div class="metric" id="exerciseTargetDisplay">0 min</div>
+            </div>
+            <div>
+              <div class="section-title">Status</div>
+              <div class="metric" id="exerciseStatusDisplay">—</div>
+            </div>
+          </div>
+          <div class="footer-note" id="exerciseSummaryNote">Total is calculated automatically from cardio + walking + strength + yoga.</div>
         </div>
         <label for="exNotes">Exercise notes</label>
         <textarea id="exNotes"></textarea>
@@ -601,8 +621,9 @@
 
 <script type="module">
   const STORAGE_PREFIX = 'habit-entry-';
-  const SETTINGS_KEY = 'habit-settings-v1';
+  const SETTINGS_KEY = 'habit-settings-v2';
   const FIREBASE_CONFIG_KEY = 'habit-firebase-config-v1';
+  const SETTINGS_CLOUD_DOC = 'settings';
 
   const DEFAULT_SETTINGS = {
     exerciseDaily: 120,
@@ -618,7 +639,8 @@
     sleepMin: 7,
     sleepIdeal: 7.5,
     bedtime: '22:30',
-    noJunkWeekly: 6
+    noJunkWeekly: 6,
+    updatedAt: 0
   };
 
   let settings = loadSettings();
@@ -627,11 +649,9 @@
   let firebaseAuth = null;
   let firestoreDb = null;
   let currentUser = null;
-  let authReady = false;
 
   const byId = (id) => document.getElementById(id);
 
-  // Tabs
   document.querySelectorAll('#tabNav button').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#tabNav button').forEach(b => b.classList.remove('active'));
@@ -651,6 +671,10 @@
   byId('entryDate').value = todayLocalISO();
   byId('dashTodayDate').textContent = todayLocalISO();
 
+  ['exCardio', 'exWalking', 'exStrength', 'exYoga'].forEach(id => {
+    byId(id).addEventListener('input', updateExerciseSummary);
+  });
+
   byId('entryDate').addEventListener('change', async () => {
     byId('dashTodayDate').textContent = byId('entryDate').value;
     await loadEntryToForm(byId('entryDate').value);
@@ -666,19 +690,25 @@
     clearForm();
     setSaveStatus('Cleared current form.');
   });
-  byId('saveSettingsBtn').addEventListener('click', () => {
-    settings = collectSettingsFromForm();
+
+  byId('saveSettingsBtn').addEventListener('click', async () => {
+    settings = { ...collectSettingsFromForm(), updatedAt: Date.now() };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    populateSettings();
     byId('settingsStatus').textContent = 'Settings saved.';
+    updateExerciseSummary();
     renderAll();
-    autoSyncAllEntries();
+    await autoSyncSettings();
   });
-  byId('resetSettingsBtn').addEventListener('click', () => {
-    settings = structuredClone(DEFAULT_SETTINGS);
+
+  byId('resetSettingsBtn').addEventListener('click', async () => {
+    settings = { ...structuredClone(DEFAULT_SETTINGS), updatedAt: Date.now() };
     populateSettings();
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     byId('settingsStatus').textContent = 'Settings reset to defaults.';
+    updateExerciseSummary();
     renderAll();
+    await autoSyncSettings();
   });
 
   byId('saveFirebaseBtn').addEventListener('click', async () => {
@@ -863,6 +893,7 @@
     byId('sleepInterruptions').value = entry.sleep?.interruptions ?? '';
     byId('sleepOnset').value = entry.sleep?.onset ?? '';
     byId('sleepNotes').value = entry.sleep?.notes || '';
+    updateExerciseSummary();
   }
 
   function clearForm(clearDate = true) {
@@ -906,6 +937,35 @@
     byId('sleepInterruptions').value = '';
     byId('sleepOnset').value = '';
     byId('sleepNotes').value = '';
+    updateExerciseSummary();
+  }
+
+  function updateExerciseSummary() {
+    const cardio = numVal('exCardio');
+    const walking = numVal('exWalking');
+    const strength = numVal('exStrength');
+    const yoga = numVal('exYoga');
+    const total = cardio + walking + strength + yoga;
+    const target = settings.exerciseDaily || 0;
+
+    byId('exerciseTotalDisplay').textContent = `${total} min`;
+    byId('exerciseTargetDisplay').textContent = `${target} min`;
+
+    let status = 'Below target';
+    let statusClass = 'status-warn';
+
+    if (total >= target && target > 0) {
+      status = 'Target met';
+      statusClass = 'status-good';
+    } else if (total === 0) {
+      status = 'No exercise entered';
+      statusClass = 'muted';
+    }
+
+    byId('exerciseStatusDisplay').textContent = status;
+    byId('exerciseStatusDisplay').className = statusClass;
+    byId('exerciseSummaryNote').textContent =
+      `Total is calculated automatically from cardio + walking + strength + yoga.`;
   }
 
   function saveLocalEntry(entry) {
@@ -982,10 +1042,6 @@
     return ({ Low: 1, Medium: 2, High: 3 }[val] || 0);
   }
 
-  function prayerPracticeYes(val) {
-    return val === 'Yes' || val === 'Complete';
-  }
-
   function timeOnOrBefore(actual, target) {
     if (!actual || !target) return false;
     return actual <= target;
@@ -1050,6 +1106,7 @@
     renderMonthly();
     renderExerciseAnalytics();
     renderPrayerAnalytics();
+    updateExerciseSummary();
   }
 
   function renderDashboard() {
@@ -1237,7 +1294,6 @@
     `;
   }
 
-  // Firebase sync
   async function loadFirebaseFns() {
     if (firebaseFns) return firebaseFns;
     const appMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
@@ -1261,9 +1317,9 @@
       }
       f.onAuthStateChanged(firebaseAuth, async (user) => {
         currentUser = user || null;
-        authReady = true;
         if (currentUser) {
           setSyncStatus(`Signed in as ${currentUser.email || currentUser.uid}. Auto-sync active.`);
+          await pullCloudSettings();
           await pullAllCloudEntries();
           await loadEntryToForm(byId('entryDate').value);
           renderAll();
@@ -1314,16 +1370,21 @@
     setSyncStatus('Signed out.');
   }
 
-  async function cloudDocRef(date) {
+  async function cloudEntryRef(date) {
     const f = await loadFirebaseFns();
     return f.doc(firestoreDb, 'users', currentUser.uid, 'entries', date);
+  }
+
+  async function cloudSettingsRef() {
+    const f = await loadFirebaseFns();
+    return f.doc(firestoreDb, 'users', currentUser.uid, 'meta', SETTINGS_CLOUD_DOC);
   }
 
   async function autoSyncEntry(entry) {
     if (!currentUser || !firestoreDb) return;
     try {
       const f = await loadFirebaseFns();
-      await f.setDoc(await cloudDocRef(entry.date), entry, { merge: true });
+      await f.setDoc(await cloudEntryRef(entry.date), entry, { merge: true });
       setSaveStatus('Saved locally and synced to cloud.');
       setSyncStatus('Cloud sync complete.');
     } catch (err) {
@@ -1340,11 +1401,44 @@
     }
   }
 
+  async function autoSyncSettings() {
+    if (!currentUser || !firestoreDb) return;
+    try {
+      const f = await loadFirebaseFns();
+      await f.setDoc(await cloudSettingsRef(), settings, { merge: true });
+      setSyncStatus('Settings synced to cloud.');
+    } catch (err) {
+      console.error(err);
+      setSyncStatus(`Settings sync failed: ${err.message}`);
+    }
+  }
+
+  async function pullCloudSettings() {
+    if (!currentUser || !firestoreDb) return;
+    try {
+      const f = await loadFirebaseFns();
+      const snap = await f.getDoc(await cloudSettingsRef());
+      if (!snap.exists()) return;
+      const cloudSettings = snap.data();
+      const localSettings = loadSettings();
+      if ((cloudSettings.updatedAt || 0) >= (localSettings.updatedAt || 0)) {
+        settings = { ...structuredClone(DEFAULT_SETTINGS), ...cloudSettings };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        populateSettings();
+        updateExerciseSummary();
+        byId('settingsStatus').textContent = 'Settings loaded from cloud.';
+      }
+    } catch (err) {
+      console.error(err);
+      setSyncStatus(`Cloud settings read failed: ${err.message}`);
+    }
+  }
+
   async function getCloudEntry(date) {
     if (!currentUser || !firestoreDb) return null;
     try {
       const f = await loadFirebaseFns();
-      const snap = await f.getDoc(await cloudDocRef(date));
+      const snap = await f.getDoc(await cloudEntryRef(date));
       return snap.exists() ? snap.data() : null;
     } catch (err) {
       console.error(err);
@@ -1373,7 +1467,6 @@
     }
   }
 
-  // Init
   populateSettings();
   initFirebaseFromSavedConfig();
   loadEntryToForm(byId('entryDate').value);
