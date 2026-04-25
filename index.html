@@ -484,6 +484,7 @@
       <div class="card">
         <h2>Weekly review</h2>
         <div class="footer-note">Uses the selected date as the end of the current 7-day window.</div>
+        <div class="footer-note" id="weeklyWindowNote"></div>
       </div>
       <div class="grid">
         <div class="card" id="weeklySummary"></div>
@@ -969,28 +970,30 @@
   }
 
   function saveLocalEntry(entry) {
-    localStorage.setItem(entryKey(entry.date), JSON.stringify(entry));
+    const normalized = normalizedEntry(entry);
+    localStorage.setItem(entryKey(normalized.date), JSON.stringify(normalized));
   }
 
   function getLocalEntry(date) {
     const raw = localStorage.getItem(entryKey(date));
     if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
+    try { return normalizedEntry(JSON.parse(raw)); } catch { return null; }
   }
 
   function getAllLocalEntries() {
     return Object.keys(localStorage)
       .filter(k => k.startsWith(STORAGE_PREFIX))
       .map(k => {
-        try { return JSON.parse(localStorage.getItem(k)); } catch { return null; }
+        try { return normalizedEntry(JSON.parse(localStorage.getItem(k))); } catch { return null; }
       })
       .filter(Boolean)
       .sort((a,b) => a.date.localeCompare(b.date));
   }
 
   async function saveDay() {
-    const entry = collectFormEntry();
+    const entry = normalizedEntry(collectFormEntry());
     saveLocalEntry(entry);
+    populateForm(entry);
     setSaveStatus('Saved locally.');
     await autoSyncEntry(entry);
     renderAll();
@@ -1047,6 +1050,36 @@
     return actual <= target;
   }
 
+  function exerciseTotalForEntry(entry) {
+    const ex = entry?.exercise || {};
+    const categoryTotal =
+      Number(ex.cardio || 0) +
+      Number(ex.walking || 0) +
+      Number(ex.strength || 0) +
+      Number(ex.yoga || 0);
+
+    // Prefer the category sum whenever category fields exist. This fixes
+    // older entries saved before automatic total calculation was added.
+    if (categoryTotal > 0) return categoryTotal;
+    return Number(ex.total || 0);
+  }
+
+  function normalizedEntry(entry) {
+    if (!entry) return entry;
+    const normalized = structuredClone(entry);
+    normalized.exercise = normalized.exercise || {};
+    normalized.exercise.cardio = Number(normalized.exercise.cardio || 0);
+    normalized.exercise.walking = Number(normalized.exercise.walking || 0);
+    normalized.exercise.strength = Number(normalized.exercise.strength || 0);
+    normalized.exercise.yoga = Number(normalized.exercise.yoga || 0);
+    normalized.exercise.total = exerciseTotalForEntry(normalized);
+    normalized.study = normalized.study || {};
+    normalized.sleep = normalized.sleep || {};
+    normalized.prayer = normalized.prayer || {};
+    normalized.diet = normalized.diet || {};
+    return normalized;
+  }
+
   function dailyScores(entry) {
     if (!entry) return { total: 0, items: {} };
     const diet = (
@@ -1057,7 +1090,7 @@
     ) * 100;
 
     const exScore = (
-      ratio(entry.exercise.total, settings.exerciseDaily) * 0.45 +
+      ratio(exerciseTotalForEntry(entry), settings.exerciseDaily) * 0.45 +
       ratio(entry.exercise.cardio, settings.cardioWeekly / 7 || 1) * 0.15 +
       ratio(entry.exercise.walking, settings.walkingWeekly / 7 || 1) * 0.15 +
       ratio(entry.exercise.strength, settings.strengthWeekly / 7 || 1) * 0.125 +
@@ -1114,7 +1147,7 @@
     const week = windowEntries(7);
     const month = windowEntries(30);
     const todayScore = dailyScores(selected);
-    const weekExerciseDays = countBy(week, e => e.exercise.total >= settings.exerciseDaily);
+    const weekExerciseDays = countBy(week, e => exerciseTotalForEntry(e) >= settings.exerciseDaily);
     const weekRosaryComplete = countBy(week, e => e.prayer.rosary === 'Complete');
     const weekRosaryPartial = countBy(week, e => e.prayer.rosary === 'Partial');
     const weekSleepAvg = avg(week.map(e => e.sleep.hours));
@@ -1122,8 +1155,8 @@
 
     byId('dashTodayScore').textContent = pct(todayScore.total);
     byId('dashTodayDate').textContent = byId('entryDate').value;
-    byId('dashExerciseToday').textContent = `${selected?.exercise.total || 0} min`;
-    byId('dashExerciseBar').style.width = `${ratio(selected?.exercise.total || 0, settings.exerciseDaily) * 100}%`;
+    byId('dashExerciseToday').textContent = `${selected ? exerciseTotalForEntry(selected) : 0} min`;
+    byId('dashExerciseBar').style.width = `${ratio(selected ? exerciseTotalForEntry(selected) : 0, settings.exerciseDaily) * 100}%`;
     byId('dashStudyToday').textContent = `${selected?.study.actual || 0} min`;
     byId('dashStudyBar').style.width = `${ratio(selected?.study.actual || 0, settings.studyDaily) * 100}%`;
     byId('dashSleepToday').textContent = `${selected?.sleep.hours || 0} hr`;
@@ -1136,7 +1169,7 @@
     byId('dashWeekStudy').textContent = `Study: ${sumBy(week, e => e.study.actual)} min`;
 
     byId('dashMonthScore').textContent = pct(avg(monthScores));
-    byId('dashMonthExercise').textContent = `Exercise total: ${sumBy(month, e => e.exercise.total)} min`;
+    byId('dashMonthExercise').textContent = `Exercise total: ${sumBy(month, e => exerciseTotalForEntry(e))} min`;
     byId('dashMonthPrayer').textContent = `Rosary complete: ${countBy(month, e => e.prayer.rosary === 'Complete')}`;
     byId('dashMonthStudy').textContent = `Study total: ${sumBy(month, e => e.study.actual)} min`;
     byId('dashMonthSleep').textContent = `Avg sleep: ${avg(month.map(e => e.sleep.hours)).toFixed(1)} hr`;
@@ -1162,6 +1195,13 @@
 
   function renderWeekly() {
     const week = windowEntries(7);
+    const selectedDateForWeek = byId('entryDate').value || todayLocalISO();
+    const endDateForWeek = new Date(selectedDateForWeek);
+    const startDateForWeek = new Date(endDateForWeek);
+    startDateForWeek.setDate(startDateForWeek.getDate() - 6);
+    if (byId('weeklyWindowNote')) {
+      byId('weeklyWindowNote').textContent = `Showing ${isoDate(startDateForWeek)} through ${isoDate(endDateForWeek)}. ${week.length} saved entries found in this window.`;
+    }
     const scores = week.map(e => dailyScores(e));
     const catAvg = {
       diet: avg(scores.map(s => s.items.diet)),
@@ -1173,8 +1213,8 @@
     byId('weeklySummary').innerHTML = `
       <h3>Weekly summary</h3>
       <div class="pill">Entries: ${week.length}</div>
-      <div class="pill">Exercise total: ${sumBy(week, e => e.exercise.total)} min</div>
-      <div class="pill">120+ days: ${countBy(week, e => e.exercise.total >= settings.exerciseDaily)}</div>
+      <div class="pill">Exercise total: ${sumBy(week, e => exerciseTotalForEntry(e))} min</div>
+      <div class="pill">120+ days: ${countBy(week, e => exerciseTotalForEntry(e) >= settings.exerciseDaily)}</div>
       <div class="pill">Study total: ${sumBy(week, e => e.study.actual)} min</div>
       <div class="pill">Avg sleep: ${avg(week.map(e => e.sleep.hours)).toFixed(1)} hr</div>
       <div class="pill">Rosary complete: ${countBy(week, e => e.prayer.rosary === 'Complete')}</div>
@@ -1223,7 +1263,7 @@
     byId('monthlySummary').innerHTML = `
       <h3>Monthly summary</h3>
       <div class="pill">Entries: ${month.length}</div>
-      <div class="pill">Exercise total: ${sumBy(month, e => e.exercise.total)} min</div>
+      <div class="pill">Exercise total: ${sumBy(month, e => exerciseTotalForEntry(e))} min</div>
       <div class="pill">Study total: ${sumBy(month, e => e.study.actual)} min</div>
       <div class="pill">Avg sleep: ${avg(month.map(e => e.sleep.hours)).toFixed(1)} hr</div>
       <div class="pill">Rosary complete: ${countBy(month, e => e.prayer.rosary === 'Complete')}</div>
@@ -1242,7 +1282,7 @@
       <h3>Monthly breakdown</h3>
       <table>
         <tr><th>Metric</th><th>Value</th></tr>
-        <tr><td>Exercise threshold days</td><td>${countBy(month, e => e.exercise.total >= settings.exerciseDaily)}</td></tr>
+        <tr><td>Exercise threshold days</td><td>${countBy(month, e => exerciseTotalForEntry(e) >= settings.exerciseDaily)}</td></tr>
         <tr><td>Morning prayer days</td><td>${countBy(month, e => e.prayer.morning === 'Yes')}</td></tr>
         <tr><td>Evening prayer days</td><td>${countBy(month, e => e.prayer.evening === 'Yes')}</td></tr>
         <tr><td>Rosary partial days</td><td>${countBy(month, e => e.prayer.rosary === 'Partial')}</td></tr>
@@ -1259,7 +1299,7 @@
     const week = windowEntries(7);
     byId('exerciseAnalytics').innerHTML = `
       <h2>Exercise analytics</h2>
-      ${progressRow('Daily exercise threshold', ratio(countBy(week, e => e.exercise.total >= settings.exerciseDaily), settings.exerciseDays) * 100, `${countBy(week, e => e.exercise.total >= settings.exerciseDaily)}/${settings.exerciseDays} days`)}
+      ${progressRow('Daily exercise threshold', ratio(countBy(week, e => exerciseTotalForEntry(e) >= settings.exerciseDaily), settings.exerciseDays) * 100, `${countBy(week, e => exerciseTotalForEntry(e) >= settings.exerciseDaily)}/${settings.exerciseDays} days`)}
       ${progressRow('Cardio weekly', ratio(sumBy(week, e => e.exercise.cardio), settings.cardioWeekly) * 100, `${sumBy(week, e => e.exercise.cardio)}/${settings.cardioWeekly} min`)}
       ${progressRow('Walking weekly', ratio(sumBy(week, e => e.exercise.walking), settings.walkingWeekly) * 100, `${sumBy(week, e => e.exercise.walking)}/${settings.walkingWeekly} min`)}
       ${progressRow('Strength weekly', ratio(sumBy(week, e => e.exercise.strength), settings.strengthWeekly) * 100, `${sumBy(week, e => e.exercise.strength)}/${settings.strengthWeekly} min`)}
@@ -1453,7 +1493,7 @@
       const q = f.collection(firestoreDb, 'users', currentUser.uid, 'entries');
       const snap = await f.getDocs(q);
       snap.forEach(docSnap => {
-        const entry = docSnap.data();
+        const entry = normalizedEntry(docSnap.data());
         if (!entry?.date) return;
         const local = getLocalEntry(entry.date);
         if (!local || (entry.updatedAt || 0) > (local.updatedAt || 0)) {
